@@ -1,6 +1,9 @@
+import os
 import time
-
+import json
 import requests
+from dotenv import load_dotenv
+from slugify import slugify
 
 EP_ACCESS_TOKEN = None
 EP_TOKEN_LIFETIME = None
@@ -72,10 +75,10 @@ def add_product_to_cart(moltin_token, cart_id, product_id, quantity):
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json',
     }
-    data = {"data":
-                 { "id": product_id,
-                   "type": "cart_item",
-                   "quantity": quantity}
+    data = {'data':
+                 { 'id': product_id,
+                   'type': 'cart_item',
+                   'quantity': quantity}
              }
     response = requests.post(url, headers=headers, json=data)
     response.raise_for_status()
@@ -122,10 +125,10 @@ def create_customer(moltin_token, name, email):
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json',
     }
-    data = {"data":
-                {"type": "customer",
-                 "name": name,
-                 "email": email}
+    data = {'data':
+                {'type': 'customer',
+                 'name': name,
+                 'email': email}
             }
     response = requests.post(url, headers=headers, json=data)
     response.raise_for_status()
@@ -141,3 +144,91 @@ def get_customer(moltin_token, user_id):
     response = requests.get(url, headers=headers)
     response.raise_for_status()
     return response.json()
+
+
+def create_product(moltin_token, name, sku, description, price):
+    access_token = get_ep_access_token(moltin_token)
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json',
+    }
+    data = {'data':{
+        'type': 'pizza',
+        'name': name,
+        'slug': slugify(name),
+        'sku': sku,
+        'description': description,
+        'manage_stock': False,
+        'price': [{
+            'amount': price,
+            'currency': 'RUB',
+            'includes_tax': True
+        }],
+        'status': 'live',
+        'commodity_type': 'physical'
+    }}
+    response = requests.post('https://api.moltin.com/v2/products',
+                            headers=headers, json=data)
+    print(response.text)
+    response.raise_for_status()
+    return response.json()
+
+
+def create_file(moltin_token, image_url):
+    access_token = get_ep_access_token(moltin_token)
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+    }
+    files = {
+        'file-location': (None, image_url),
+    }
+    response = requests.post('https://api.moltin.com/v2/files',
+                             headers=headers, files=files)
+    print(response.text)
+    response.raise_for_status()
+    return response.json()
+
+
+def create_image_relationship(moltin_token, product_id, image_id):
+    access_token = get_ep_access_token(moltin_token)
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json',
+    }
+    data = {"data": {
+        'type': 'main_image',
+        'id': image_id
+    }}
+    response = requests.post(
+        f'https://api.moltin.com/v2/products/{product_id}/relationships/main-image',
+        headers=headers, data=data)
+    print(response.text)
+    response.raise_for_status()
+    return response.json()
+
+
+def main():
+    load_dotenv()
+    moltin_token = os.getenv('ELASTICPATH_CLIENT_ID')
+
+    with open("menu.json", "r", encoding="utf8") as file:
+        menu_json = file.read()
+    menu = json.loads(menu_json)
+
+    for pizza in menu:
+        name = pizza['name']
+        sku = pizza['id']
+        description = pizza['description']
+        price = pizza['price']
+        image_url = pizza['product_image']['url']
+        product = create_product(moltin_token, name, sku, description, price)
+        product_id = product['data']['id']
+        image = create_file(moltin_token, image_url)
+        image_id = image['data']['id']
+        create_image_relationship(moltin_token, product_id, image_id)
+        break
+
+
+
+if __name__ == '__main__':
+    main()
