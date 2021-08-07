@@ -193,12 +193,31 @@ def create_image_relationship(moltin_token, moltin_secret, product_id, image_id)
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json',
     }
-    data = {"data": {
+    data = {'data': {
         'type': 'main_image',
         'id': image_id
     }}
     response = requests.post(
         f'https://api.moltin.com/v2/products/{product_id}/relationships/main-image',
         headers=headers, json=data)
+    response.raise_for_status()
+    return response.json()
+
+
+def create_flow(moltin_token, moltin_secret, name, description):
+    access_token = get_ep_access_token(moltin_token, moltin_secret)
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json',
+    }
+    data = {'data': {
+        'type': 'flow',
+        'name': name,
+        'slug': slugify(name),
+        'description': description,
+        'enabled': True
+    }}
+    response = requests.post('https://api.moltin.com/v2/flows',
+                             headers=headers, json=data)
     response.raise_for_status()
     return response.json()
