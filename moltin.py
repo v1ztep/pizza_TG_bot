@@ -221,3 +221,69 @@ def create_flow(moltin_token, moltin_secret, name, description):
                              headers=headers, json=data)
     response.raise_for_status()
     return response.json()
+
+
+def create_field(moltin_token, moltin_secret, name, field_type, description,
+                 flow_id):
+    access_token = get_ep_access_token(moltin_token, moltin_secret)
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json',
+    }
+    data = {"data": {
+        "type": "field",
+        "name": name,
+        "slug": slugify(name),
+        "field_type": field_type,
+        "description": description,
+        "required": True,
+        "enabled": True,
+        "relationships": {
+            "flow": {"data": {
+                "type": "flow",
+                "id": flow_id
+            }}
+        }
+    }}
+    response = requests.post('https://api.moltin.com/v2/fields',
+                             headers=headers, json=data)
+    response.raise_for_status()
+    return response.json()
+
+
+def create_entry(moltin_token, moltin_secret, flow_slug, fields):
+    access_token = get_ep_access_token(moltin_token, moltin_secret)
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+        'Content-Type': 'application/json',
+    }
+    data = {"data": {
+        "type": "entry",
+    }}
+    data['data'].update(fields)
+    response = requests.post(f'https://api.moltin.com/v2/flows/{flow_slug}/entries',
+                             headers=headers, json=data)
+    response.raise_for_status()
+    return response.json()
+
+
+def get_all_entries(moltin_token, moltin_secret, flow_slug):
+    url = f'https://api.moltin.com/v2/flows/{flow_slug}/entries'
+    access_token = get_ep_access_token(moltin_token, moltin_secret)
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+    }
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    return response.json()
+
+
+def get_all_flows(moltin_token, moltin_secret):
+    url = f'https://api.moltin.com/v2/flows/'
+    access_token = get_ep_access_token(moltin_token, moltin_secret)
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+    }
+    response = requests.get(url, headers=headers)
+    response.raise_for_status()
+    return response.json()
