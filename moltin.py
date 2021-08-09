@@ -74,12 +74,13 @@ def add_product_to_cart(moltin_token, moltin_secret, cart_id, product_id, quanti
     headers = {
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json',
+        'X-MOLTIN-CURRENCY': 'RUB'
     }
-    data = {'data':
-                 { 'id': product_id,
-                   'type': 'cart_item',
-                   'quantity': quantity}
-             }
+    data = {'data': {
+        'id': product_id,
+        'type': 'cart_item',
+        'quantity': quantity
+    }}
     response = requests.post(url, headers=headers, json=data)
     response.raise_for_status()
     return response.json()
@@ -150,7 +151,7 @@ def create_product(moltin_token, moltin_secret, name, sku, description, price):
     access_token = get_ep_access_token(moltin_token, moltin_secret)
     headers = {
         'Authorization': f'Bearer {access_token}',
-        'Content-Type': 'application/json',
+        'Content-Type': 'application/json'
     }
     data = {'data':{
         'type': 'product',
