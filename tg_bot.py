@@ -43,7 +43,8 @@ def show_cart(context, chat_id, message_id):
     cart_keyboard = get_cart_keyboard(cart_items)
     context.bot.send_message(chat_id=chat_id,
                              text=cart_text,
-                             reply_markup=cart_keyboard)
+                             reply_markup=cart_keyboard,
+                             parse_mode='HTML')
     context.bot.delete_message(chat_id=chat_id, message_id=message_id)
 
 
@@ -76,7 +77,8 @@ def menu_handler(update, context):
     description_keyboard = get_description_keyboard(product_id)
     context.bot.send_photo(chat_id=chat_id, photo=image,
                            caption=description_text,
-                           reply_markup=description_keyboard)
+                           reply_markup=description_keyboard,
+                           parse_mode='HTML')
     context.bot.delete_message(chat_id=chat_id, message_id=message_id)
     return 'HANDLE_DESCRIPTION'
 
@@ -127,7 +129,8 @@ def cart_handler(update, context):
     context.bot.edit_message_text(chat_id=chat_id,
                                   text=cart_text,
                                   reply_markup=cart_keyboard,
-                                  message_id=message_id)
+                                  message_id=message_id,
+                                  parse_mode='HTML')
     return 'HANDLE_CART'
 
 

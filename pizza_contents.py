@@ -21,10 +21,10 @@ def get_menu_keyboard(context):
 
 def get_description_text(product):
     text = f'''
-        {product['name']}
+        <b>{product['name']}</b>
         Стоимость: {product['price'][0]['amount']}рублей
 
-        {product['description']}
+        <i>{product['description']}</i>
         '''
     return textwrap.dedent(text)
 
@@ -43,13 +43,14 @@ def get_cart_text(cart_items):
     text = ''
     for product in cart_items['data']:
         text += f'''
-            {product['name']}
-            {product['description']}
+            <b>{product['name']}</b>
+            <i>{product['description']}</i>
             {product['quantity']} пицц в корзине на сумму {product['meta']
-            ['display_price']['with_tax']['value']['formatted']} 
+            ['display_price']['with_tax']['value']['formatted']}рублей
             '''
     text += f'''
-            Total: {cart_items['meta']['display_price']['with_tax']['formatted']}
+            <b>К оплате: {cart_items['meta']['display_price']['with_tax']
+            ['formatted']}рублей</b>
             '''
     return textwrap.dedent(text)
 
