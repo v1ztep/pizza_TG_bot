@@ -1,22 +1,47 @@
-import json
 import textwrap
 
 from telegram import InlineKeyboardButton
 from telegram import InlineKeyboardMarkup
 
-from moltin import get_all_products
+from moltin import get_products_per_page
 
 
 def get_menu_keyboard(context):
-    all_products = get_all_products(context.bot_data['moltin_token'],
-                                    context.bot_data['moltin_secret'])
+    user_current_page = context.user_data['menu_page']
+    products_per_page = get_products_per_page(context.bot_data['moltin_token'],
+                                         context.bot_data['moltin_secret'],
+                                         user_current_page*6,
+                                         limit_per_page=6)
     keyboard = []
-    for product in all_products['data']:
+    for product in products_per_page['data']:
         keyboard.append([InlineKeyboardButton(product['name'],
                                               callback_data=product['id'])])
+    product_current_page = products_per_page['meta']['page']['current']
+    product_total_page = products_per_page['meta']['page']['total']
+    if product_total_page > 1:
+        pagination_buttons = get_pagination_buttons(product_current_page,
+                                                      product_total_page)
+        keyboard.append(pagination_buttons)
     keyboard.append([InlineKeyboardButton("Корзина", callback_data='to_cart')])
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
+
+
+def get_pagination_buttons(product_current_page, product_total_page):
+    if product_current_page == 1:
+        pagination_buttons = (
+            [InlineKeyboardButton("Следующая ➡️",callback_data='forward +1')]
+        )
+    elif product_current_page == product_total_page:
+        pagination_buttons = (
+            [InlineKeyboardButton("⬅️ Предыдущая",callback_data='back -1')]
+        )
+    else:
+        pagination_buttons = (
+            [InlineKeyboardButton("⬅️ Пред", callback_data='back -1'),
+             InlineKeyboardButton("След ➡️", callback_data='forward +1')]
+        )
+    return pagination_buttons
 
 
 def get_description_text(product):
