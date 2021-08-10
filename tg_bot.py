@@ -49,8 +49,8 @@ def show_cart(context, chat_id, message_id):
 
 
 def start(update, context):
+    context.user_data['menu_page'] = 0
     reply_markup = get_menu_keyboard(context)
-
     update.message.reply_text('Please choose:', reply_markup=reply_markup)
     return 'HANDLE_MENU'
 
@@ -63,7 +63,16 @@ def menu_handler(update, context):
     if query.data == 'to_cart':
         show_cart(context, chat_id, message_id)
         return 'HANDLE_CART'
-
+    elif 'back' in query.data or 'forward' in query.data:
+        current_user_page = context.user_data['menu_page']
+        context.user_data['menu_page'] = int(current_user_page) \
+                                         + int(query.data.split()[1])
+        menu_keyboard = get_menu_keyboard(context)
+        context.bot.edit_message_text(chat_id=chat_id,
+                                      text='Please choose:',
+                                      reply_markup=menu_keyboard,
+                                      message_id=message_id)
+        return 'HANDLE_MENU'
     product_id = query.data
     product = get_product(context.bot_data['moltin_token'],
                           context.bot_data['moltin_secret'],
