@@ -34,13 +34,17 @@ def create_ep_access_token(moltin_token, moltin_secret):
     return ep_access_token, ep_token_lifetime
 
 
-def get_all_products(moltin_token, moltin_secret):
+def get_products_per_page(moltin_token, moltin_secret, page, limit_per_page):
     access_token = get_ep_access_token(moltin_token, moltin_secret)
     headers = {
         'Authorization': f'Bearer {access_token}',
     }
+    params = {
+        'page[limit]': limit_per_page,
+        'page[offset]': page
+    }
     response = requests.get('https://api.moltin.com/v2/products',
-                            headers=headers)
+                            headers=headers, params=params)
     response.raise_for_status()
     return response.json()
 
