@@ -11,6 +11,8 @@ def fetch_coordinates(apikey, place):
     print(response.text)
     response.raise_for_status()
     found_places = response.json()['response']['GeoObjectCollection']['featureMember']
+    if not found_places:
+        return
     most_relevant = found_places[0]
     lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")
     return lon, lat
@@ -18,7 +20,7 @@ def fetch_coordinates(apikey, place):
 
 def main():
     load_dotenv()
-    yandex_geocoder_api = os.getenv('YANDEX_GEOCODER_API')
+    yandex_geocoder_api = os.getenv('YANDEX_GEOCODER_API_KEY')
     lon, lat = fetch_coordinates(yandex_geocoder_api, 'sdfgsdfgsdf sd')
     print(lon, lat)
 
