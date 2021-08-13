@@ -12,6 +12,7 @@ from telegram.ext import Updater
 from validate_email import validate_email
 
 from connect_to_redis_db import get_database_connection
+from coordinates import fetch_coordinates
 from logs_handler import TelegramLogsHandler
 from moltin import add_product_to_cart
 from moltin import create_customer
@@ -124,10 +125,12 @@ def cart_handler(update, context):
         show_menu(context, chat_id, message_id)
         return 'HANDLE_MENU'
     if query.data == 'to_payment':
-        context.bot.edit_message_text(chat_id=chat_id,
-                                      text='Пришлите, пожалуйста, ваш email',
-                                      message_id=message_id)
-        return 'WAITING_EMAIL'
+        context.bot.edit_message_text(
+            chat_id=chat_id,
+            text='Пришлите, пожалуйста, ваш адрес текстом или геопозицию',
+            message_id=message_id
+        )
+        return 'WAITING_LOCATION'
 
     cart_item_id = query.data
     remaining_items = remove_item_in_cart(context.bot_data['moltin_token'],
@@ -143,31 +146,40 @@ def cart_handler(update, context):
     return 'HANDLE_CART'
 
 
-def email_handler(update, context):
-    users_reply = update.message.text
-    if not validate_email(email_address=users_reply, check_format=True,
-                    check_blacklist=False, check_dns=False, check_smtp=False):
+def location_handler(update, context):
+    if update.message.location:
+        user_location = update.message.location
+        lon = user_location.longitude
+        lat = user_location.latitude
+        print(lon, lat)
+    elif not fetch_coordinates(context.bot_data['geo_token'],
+                                      update.message.text):
         text = f'''
-                Кажется вы неправильно ввели почту: {users_reply}
+                Кажется вы неправильно ввели адрес: {update.message.text}
                 Пришлите ещё раз.
                 '''
         update.message.reply_text(text=textwrap.dedent(text))
-        return 'WAITING_EMAIL'
+        return 'WAITING_LOCATION'
+    else:
+        lon, lat = fetch_coordinates(context.bot_data['geo_token'],
+                                      update.message.text)
+        print(lon, lat)
+
+
     chat_id = update.message.chat_id
     cart_items = get_cart_items(context.bot_data['moltin_token'],
                                 context.bot_data['moltin_secret'],
                                 chat_id)
     cart_text = get_cart_text(cart_items)
     text = f'''
-        Мы свяжемся с вами по почте: {users_reply}, для подтверждения вашего заказа:
-        {cart_text}
+        Геопозиция: {lon, lat}
         '''
     update.message.reply_text(text=textwrap.dedent(text))
     customer_name = f'{update.message.chat.first_name} {update.message.chat.last_name}'
-    create_customer(context.bot_data['moltin_token'],
-                    context.bot_data['moltin_secret'],
-                    customer_name,
-                    users_reply)
+    # create_customer(context.bot_data['moltin_token'],
+    #                 context.bot_data['moltin_secret'],
+    #                 customer_name,
+    #                 users_location)
     return 'START'
 
 
@@ -179,11 +191,14 @@ def handle_users_reply(update, context):
     elif update.callback_query:
         user_reply = update.callback_query.data
         chat_id = update.callback_query.message.chat_id
+    elif update.message.location:
+        user_reply = update.message.location
+        chat_id = update.message.chat_id
     else:
         return
     if user_reply == '/start':
         user_state = 'START'
-    elif update.message and db.get(chat_id).decode("utf-8") != 'WAITING_EMAIL':
+    elif update.message and db.get(chat_id).decode("utf-8") != 'WAITING_LOCATION':
         return
     else:
         user_state = db.get(chat_id).decode("utf-8")
@@ -193,7 +208,7 @@ def handle_users_reply(update, context):
         'HANDLE_MENU': menu_handler,
         'HANDLE_DESCRIPTION': description_handler,
         'HANDLE_CART': cart_handler,
-        'WAITING_EMAIL': email_handler
+        'WAITING_LOCATION': location_handler
     }
     state_handler = states_functions[user_state]
     next_state = state_handler(update, context)
@@ -218,8 +233,10 @@ def main():
     dp = updater.dispatcher
     dp.bot_data['moltin_token'] = os.getenv('ELASTICPATH_CLIENT_ID')
     dp.bot_data['moltin_secret'] = os.getenv('ELASTICPATH_CLIENT_SECRET')
+    dp.bot_data['geo_token'] = os.getenv('YANDEX_GEOCODER_API_KEY')
     dp.add_handler(CallbackQueryHandler(handle_users_reply))
     dp.add_handler(MessageHandler(Filters.text, handle_users_reply))
+    dp.add_handler(MessageHandler(Filters.location, handle_users_reply))
     dp.add_handler(CommandHandler('start', handle_users_reply))
     dp.add_error_handler(error_handler)
     updater.start_polling()
