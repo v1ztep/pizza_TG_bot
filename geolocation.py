@@ -1,5 +1,5 @@
 import os
-
+from geopy import distance
 import requests
 from dotenv import load_dotenv
 
@@ -16,6 +16,9 @@ def fetch_coordinates(apikey, place):
     most_relevant = found_places[0]
     lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")
     return lon, lat
+
+
+
 
 
 def main():
