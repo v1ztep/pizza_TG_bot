@@ -34,14 +34,14 @@ def create_ep_access_token(moltin_token, moltin_secret):
     return ep_access_token, ep_token_lifetime
 
 
-def get_products_per_page(moltin_token, moltin_secret, page, limit_per_page):
+def get_products(moltin_token, moltin_secret, page_offset, limit_per_page):
     access_token = get_ep_access_token(moltin_token, moltin_secret)
     headers = {
         'Authorization': f'Bearer {access_token}',
     }
     params = {
         'page[limit]': limit_per_page,
-        'page[offset]': page
+        'page[offset]': page_offset
     }
     response = requests.get('https://api.moltin.com/v2/products',
                             headers=headers, params=params)
@@ -272,18 +272,22 @@ def create_entry(moltin_token, moltin_secret, flow_slug, fields):
     return response.json()
 
 
-def get_all_entries(moltin_token, moltin_secret, flow_slug):
+def get_entries(moltin_token, moltin_secret, flow_slug, limit_per_page, page_offset):
     url = f'https://api.moltin.com/v2/flows/{flow_slug}/entries'
     access_token = get_ep_access_token(moltin_token, moltin_secret)
     headers = {
         'Authorization': f'Bearer {access_token}',
     }
-    response = requests.get(url, headers=headers)
+    params = {
+        'page[limit]': limit_per_page,
+        'page[offset]': page_offset
+    }
+    response = requests.get(url, headers=headers, params=params)
     response.raise_for_status()
     return response.json()
 
 
-def get_all_flows(moltin_token, moltin_secret):
+def get_flows(moltin_token, moltin_secret):
     url = f'https://api.moltin.com/v2/flows/'
     access_token = get_ep_access_token(moltin_token, moltin_secret)
     headers = {
