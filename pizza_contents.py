@@ -1,17 +1,21 @@
 import textwrap
+from itertools import count
 
+from geopy import distance
 from telegram import InlineKeyboardButton
 from telegram import InlineKeyboardMarkup
 
-from moltin import get_products_per_page
+from moltin import get_entries
+from moltin import get_products
 
 
 def get_menu_keyboard(context):
+    on_page = 6
     user_current_page = context.user_data['menu_page']
-    products_per_page = get_products_per_page(context.bot_data['moltin_token'],
-                                         context.bot_data['moltin_secret'],
-                                         user_current_page*6,
-                                         limit_per_page=6)
+    products_per_page = get_products(context.bot_data['moltin_token'],
+                                     context.bot_data['moltin_secret'],
+                                     page_offset=user_current_page * on_page,
+                                     limit_per_page=on_page)
     keyboard = []
     for product in products_per_page['data']:
         keyboard.append([InlineKeyboardButton(product['name'],
@@ -91,3 +95,26 @@ def get_cart_keyboard(cart_items):
     keyboard.append([InlineKeyboardButton('В меню', callback_data='to_menu')])
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
+
+
+def get_all_pizzerias(context, flow_slug='pizzeria'):
+    on_page = 25
+    pizzerias = []
+
+    for current_page in count():
+        entries = get_entries(context.bot_data['moltin_token'],
+                              context.bot_data['moltin_secret'],
+                              flow_slug,
+                              page_offset=current_page * on_page,
+                              limit_per_page=on_page)
+        pizzerias.extend(entries['data'])
+        if (current_page + 1) == entries['meta']['page']['total']:
+            break
+
+    return pizzerias
+
+
+def get_distance_to_user(pizzeria, user_position):
+    return distance.distance(user_position,
+                             (pizzeria['latitude'], pizzeria['longitude'])
+                             ).km
