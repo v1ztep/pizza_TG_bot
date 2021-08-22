@@ -1,7 +1,4 @@
-import os
-from geopy import distance
 import requests
-from dotenv import load_dotenv
 
 
 def fetch_coordinates(apikey, place):
@@ -16,16 +13,3 @@ def fetch_coordinates(apikey, place):
     most_relevant = found_places[0]
     lon, lat = most_relevant['GeoObject']['Point']['pos'].split(" ")
     return lon, lat
-
-
-
-
-
-def main():
-    load_dotenv()
-    yandex_geocoder_api = os.getenv('YANDEX_GEOCODER_API_KEY')
-    lon, lat = fetch_coordinates(yandex_geocoder_api, 'sdfgsdfgsdf sd')
-    print(lon, lat)
-
-if __name__ == '__main__':
-    main()
