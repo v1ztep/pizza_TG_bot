@@ -124,9 +124,11 @@ def get_location_text(distance_to_user, nearest_pizzeria):
     return textwrap.dedent(text)
 
 
-def get_location_keyboard():
-    keyboard = [[InlineKeyboardButton('Самовывоз', callback_data='self-pickup')],
-                [InlineKeyboardButton("Доставка", callback_data='delivery')]]
+def get_location_keyboard(distance_to_user):
+    keyboard = [[InlineKeyboardButton('Самовывоз', callback_data='self-pickup')]]
+    if distance_to_user <= 20:
+        keyboard.append(
+            [InlineKeyboardButton("Доставка", callback_data='delivery')])
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
 
