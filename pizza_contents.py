@@ -97,6 +97,40 @@ def get_cart_keyboard(cart_items):
     return reply_markup
 
 
+def get_location_text(distance_to_user, nearest_pizzeria):
+    if distance_to_user <= 0.5:
+        text = f''' 
+                Может заберёте пиццу из нашей пиццерии неподалёку? 
+                Она всего в <b>{int(distance_to_user * 1000)}</b> метрах от Вас!
+                Вот её адрес: <i><b>{nearest_pizzeria['address']}</b></i>.
+
+                А можем и бесплатно доставить, нам не сложно ;)
+                '''
+    elif distance_to_user <= 5:
+        text = f''' 
+                Похоже придётся ехать до вас на самокате. Доставка будет 
+                стоить 100 рублей. Доставляем или самовывоз? 
+                '''
+    elif distance_to_user <= 20:
+        text = f'''
+                Похоже придётся ехать до вас на авто. Доставка будет стоить 
+                300 рублей. Доставляем или самовывоз?
+                '''
+    else:
+        text = f''' 
+                Простите, но так далеко мы пиццу не доставим. Ближайшая 
+                пиццерия аж в <b>{int(distance_to_user)}</b> километрах от Вас!
+                '''
+    return textwrap.dedent(text)
+
+
+def get_location_keyboard():
+    keyboard = [[InlineKeyboardButton('Самовывоз', callback_data='self-pickup')],
+                [InlineKeyboardButton("Доставка", callback_data='delivery')]]
+    reply_markup = InlineKeyboardMarkup(keyboard)
+    return reply_markup
+
+
 def get_all_pizzerias(context, flow_slug='pizzeria'):
     on_page = 25
     pizzerias = []
