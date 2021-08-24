@@ -1,6 +1,7 @@
 import logging
 import os
 import textwrap
+from functools import partial
 
 import telegram
 from dotenv import load_dotenv
@@ -9,21 +10,23 @@ from telegram.ext import CommandHandler
 from telegram.ext import Filters
 from telegram.ext import MessageHandler
 from telegram.ext import Updater
-from validate_email import validate_email
 
 from connect_to_redis_db import get_database_connection
-from coordinates import fetch_coordinates
+from geolocation import fetch_coordinates
 from logs_handler import TelegramLogsHandler
 from moltin import add_product_to_cart
-from moltin import create_customer
 from moltin import get_cart_items
 from moltin import get_image
 from moltin import get_product
 from moltin import remove_item_in_cart
+from pizza_contents import get_all_pizzerias
 from pizza_contents import get_cart_keyboard
 from pizza_contents import get_cart_text
 from pizza_contents import get_description_keyboard
 from pizza_contents import get_description_text
+from pizza_contents import get_distance_to_user
+from pizza_contents import get_location_keyboard
+from pizza_contents import get_location_text
 from pizza_contents import get_menu_keyboard
 
 logger = logging.getLogger('pizza_bots logger')
@@ -149,11 +152,10 @@ def cart_handler(update, context):
 def location_handler(update, context):
     if update.message.location:
         user_location = update.message.location
-        lon = user_location.longitude
-        lat = user_location.latitude
-        print(lon, lat)
+        user_lon = user_location.longitude
+        user_lat = user_location.latitude
     elif not fetch_coordinates(context.bot_data['geo_token'],
-                                      update.message.text):
+                               update.message.text):
         text = f'''
                 Кажется вы неправильно ввели адрес: {update.message.text}
                 Пришлите ещё раз.
@@ -161,26 +163,24 @@ def location_handler(update, context):
         update.message.reply_text(text=textwrap.dedent(text))
         return 'WAITING_LOCATION'
     else:
-        lon, lat = fetch_coordinates(context.bot_data['geo_token'],
-                                      update.message.text)
-        print(lon, lat)
+        user_lon, user_lat = fetch_coordinates(context.bot_data['geo_token'],
+                                               update.message.text)
+
+    pizzerias = get_all_pizzerias(context)
+    nearest_pizzeria = min(
+        pizzerias,
+        key=partial(get_distance_to_user, user_position=(user_lat, user_lon))
+    )
+    distance_to_user = get_distance_to_user(nearest_pizzeria, (user_lat, user_lon))
+    text = get_location_text(distance_to_user, nearest_pizzeria)
+    keyboard = get_location_keyboard(distance_to_user)
+
+    update.message.reply_text(text=text, reply_markup=keyboard, parse_mode='HTML')
+    return 'HANDLE_PAYMENT'
 
 
-    chat_id = update.message.chat_id
-    cart_items = get_cart_items(context.bot_data['moltin_token'],
-                                context.bot_data['moltin_secret'],
-                                chat_id)
-    cart_text = get_cart_text(cart_items)
-    text = f'''
-        Геопозиция: {lon, lat}
-        '''
-    update.message.reply_text(text=textwrap.dedent(text))
-    customer_name = f'{update.message.chat.first_name} {update.message.chat.last_name}'
-    # create_customer(context.bot_data['moltin_token'],
-    #                 context.bot_data['moltin_secret'],
-    #                 customer_name,
-    #                 users_location)
-    return 'START'
+def payment_handler(update, context):
+    pass
 
 
 def handle_users_reply(update, context):
@@ -208,7 +208,8 @@ def handle_users_reply(update, context):
         'HANDLE_MENU': menu_handler,
         'HANDLE_DESCRIPTION': description_handler,
         'HANDLE_CART': cart_handler,
-        'WAITING_LOCATION': location_handler
+        'WAITING_LOCATION': location_handler,
+        'HANDLE_PAYMENT': payment_handler
     }
     state_handler = states_functions[user_state]
     next_state = state_handler(update, context)
