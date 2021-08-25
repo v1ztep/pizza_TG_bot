@@ -5,6 +5,8 @@ from functools import partial
 
 import telegram
 from dotenv import load_dotenv
+from telegram import InlineKeyboardButton
+from telegram import InlineKeyboardMarkup
 from telegram.ext import CallbackQueryHandler
 from telegram.ext import CommandHandler
 from telegram.ext import Filters
@@ -171,16 +173,41 @@ def location_handler(update, context):
         pizzerias,
         key=partial(get_distance_to_user, user_position=(user_lat, user_lon))
     )
+    context.user_data['nearest_pizzeria'] = nearest_pizzeria
     distance_to_user = get_distance_to_user(nearest_pizzeria, (user_lat, user_lon))
     text = get_location_text(distance_to_user, nearest_pizzeria)
     keyboard = get_location_keyboard(distance_to_user)
 
     update.message.reply_text(text=text, reply_markup=keyboard, parse_mode='HTML')
-    return 'HANDLE_PAYMENT'
+    return 'HANDLE_DELIVERY'
 
 
-def payment_handler(update, context):
-    pass
+def delivery_handler(update, context):
+    query = update.callback_query
+    query.answer()
+    chat_id = query.message.chat_id
+    message_id = query.message.message_id
+    nearest_pizzeria = context.user_data['nearest_pizzeria']
+
+    if query.data == 'self-pickup':
+        text = f'''
+                Ждём вас в нашей пиццерии: <i><b>{nearest_pizzeria['address']}</b></i>.
+                '''
+        context.bot.edit_message_text(chat_id=chat_id,
+                                      text=text,
+                                      message_id=message_id,
+                                      parse_mode='HTML')
+        return 'START'
+
+    context.bot.edit_message_text(
+        chat_id=chat_id,
+        text='Для оплаты нажмите кнопку <b>Оплатить</b>',
+        message_id=message_id,
+        reply_markup=InlineKeyboardMarkup(
+            [[InlineKeyboardButton('Оплатить', callback_data='to_payment')]]),
+        parse_mode='HTML'
+    )
+    return 'START'
 
 
 def handle_users_reply(update, context):
@@ -209,7 +236,7 @@ def handle_users_reply(update, context):
         'HANDLE_DESCRIPTION': description_handler,
         'HANDLE_CART': cart_handler,
         'WAITING_LOCATION': location_handler,
-        'HANDLE_PAYMENT': payment_handler
+        'HANDLE_DELIVERY': delivery_handler
     }
     state_handler = states_functions[user_state]
     next_state = state_handler(update, context)
