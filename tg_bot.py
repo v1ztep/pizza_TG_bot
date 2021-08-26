@@ -167,18 +167,20 @@ def location_handler(update, context):
     else:
         user_lon, user_lat = fetch_coordinates(context.bot_data['geo_token'],
                                                update.message.text)
-
     pizzerias = get_all_pizzerias(context)
     nearest_pizzeria = min(
         pizzerias,
         key=partial(get_distance_to_user, user_position=(user_lat, user_lon))
     )
     context.user_data['nearest_pizzeria'] = nearest_pizzeria
+    context.user_data['user_coordinates'] = {'longitude': user_lon,
+                                             'latitude': user_lat}
     distance_to_user = get_distance_to_user(nearest_pizzeria, (user_lat, user_lon))
     text = get_location_text(distance_to_user, nearest_pizzeria)
     keyboard = get_location_keyboard(distance_to_user)
 
     update.message.reply_text(text=text, reply_markup=keyboard, parse_mode='HTML')
+
     return 'HANDLE_DELIVERY'
 
 
@@ -207,7 +209,11 @@ def delivery_handler(update, context):
             [[InlineKeyboardButton('Оплатить', callback_data='to_payment')]]),
         parse_mode='HTML'
     )
-    return 'START'
+    return 'HANDLE_PAYMENT'
+
+
+def payment_handler(update, context):
+    pass
 
 
 def handle_users_reply(update, context):
@@ -236,7 +242,8 @@ def handle_users_reply(update, context):
         'HANDLE_DESCRIPTION': description_handler,
         'HANDLE_CART': cart_handler,
         'WAITING_LOCATION': location_handler,
-        'HANDLE_DELIVERY': delivery_handler
+        'HANDLE_DELIVERY': delivery_handler,
+        'HANDLE_PAYMENT': payment_handler,
     }
     state_handler = states_functions[user_state]
     next_state = state_handler(update, context)
