@@ -7,10 +7,12 @@ import telegram
 from dotenv import load_dotenv
 from telegram import InlineKeyboardButton
 from telegram import InlineKeyboardMarkup
+from telegram import LabeledPrice
 from telegram.ext import CallbackQueryHandler
 from telegram.ext import CommandHandler
 from telegram.ext import Filters
 from telegram.ext import MessageHandler
+from telegram.ext import PreCheckoutQueryHandler
 from telegram.ext import Updater
 
 from connect_to_redis_db import get_database_connection
@@ -213,7 +215,43 @@ def delivery_handler(update, context):
 
 
 def payment_handler(update, context):
-    pass
+    query = update.callback_query
+    query.answer()
+    chat_id = query.message.chat_id
+    message_id = query.message.message_id
+    cart_items = get_cart_items(context.bot_data['moltin_token'],
+                                context.bot_data['moltin_secret'],
+                                chat_id)
+
+    title = "Payment Example"
+    description = "Payment Example using python-telegram-bot"
+    payload = "Custom-Payload"
+    provider_token = os.getenv('PAYMENT_TG_TOKEN')
+    currency = "RUB"
+    price = cart_items['meta']['display_price']['with_tax']['formatted']
+    prices = [LabeledPrice("Test", int(price)*100)]
+    context.bot.send_invoice(
+        chat_id, title, description, payload, provider_token, currency, prices
+    )
+    context.bot.delete_message(chat_id=chat_id, message_id=message_id)
+    return 'HANDLE_PRECHECKOUT'
+
+
+def precheckout_handler(update, context):
+    query = update.pre_checkout_query
+    print(update)
+    if query.invoice_payload != 'Custom-Payload':
+        query.answer(ok=False, error_message="Something went wrong...")
+    else:
+        query.answer(ok=True)
+    return 'HANDLE_SUCCESSFUL_PAYMENT'
+
+
+def successful_payment_handler(update, context):
+    """Confirms the successful payment."""
+    # do something after successfully receiving payment?
+    update.message.reply_text("Thank you for your payment!")
+    return 'START'
 
 
 def handle_users_reply(update, context):
@@ -244,6 +282,8 @@ def handle_users_reply(update, context):
         'WAITING_LOCATION': location_handler,
         'HANDLE_DELIVERY': delivery_handler,
         'HANDLE_PAYMENT': payment_handler,
+        'HANDLE_PRECHECKOUT': precheckout_handler,
+        'HANDLE_SUCCESSFUL_PAYMENT': successful_payment_handler,
     }
     state_handler = states_functions[user_state]
     next_state = state_handler(update, context)
@@ -273,6 +313,8 @@ def main():
     dp.add_handler(MessageHandler(Filters.text, handle_users_reply))
     dp.add_handler(MessageHandler(Filters.location, handle_users_reply))
     dp.add_handler(CommandHandler('start', handle_users_reply))
+    dp.add_handler(PreCheckoutQueryHandler(precheckout_handler))
+    dp.add_handler(MessageHandler(Filters.successful_payment, successful_payment_handler))
     dp.add_error_handler(error_handler)
     updater.start_polling()
 
