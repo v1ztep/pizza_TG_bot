@@ -239,18 +239,15 @@ def payment_handler(update, context):
 
 def precheckout_handler(update, context):
     query = update.pre_checkout_query
-    # print(update)
-    # print(query)
     if query.invoice_payload != 'Custom-Payload':
         query.answer(ok=False, error_message="Something went wrong...")
-    else:
-        query.answer(ok=True)
-    return 'HANDLE_SUCCESSFUL_PAYMENT'
+        return 'HANDLE_PRECHECKOUT'
+    query.answer(ok=True)
+    return 'START'
 
 
 def successful_payment_handler(update, context):
     update.message.reply_text("Thank you for your payment!")
-    return 'START'
 
 
 def handle_users_reply(update, context):
@@ -261,6 +258,9 @@ def handle_users_reply(update, context):
     elif update.callback_query:
         user_reply = update.callback_query.data
         chat_id = update.callback_query.message.chat_id
+    elif update.pre_checkout_query:
+        user_reply = update.pre_checkout_query.invoice_payload
+        chat_id = update.pre_checkout_query.from_user.id
     elif update.message.location:
         user_reply = update.message.location
         chat_id = update.message.chat_id
@@ -281,8 +281,7 @@ def handle_users_reply(update, context):
         'WAITING_LOCATION': location_handler,
         'HANDLE_DELIVERY': delivery_handler,
         'HANDLE_PAYMENT': payment_handler,
-        'HANDLE_PRECHECKOUT': precheckout_handler,
-        'HANDLE_SUCCESSFUL_PAYMENT': successful_payment_handler,
+        'HANDLE_PRECHECKOUT': precheckout_handler
     }
     state_handler = states_functions[user_state]
     next_state = state_handler(update, context)
@@ -312,8 +311,9 @@ def main():
     dp.add_handler(MessageHandler(Filters.text, handle_users_reply))
     dp.add_handler(MessageHandler(Filters.location, handle_users_reply))
     dp.add_handler(CommandHandler('start', handle_users_reply))
-    dp.add_handler(PreCheckoutQueryHandler(precheckout_handler))
-    dp.add_handler(MessageHandler(Filters.successful_payment, successful_payment_handler))
+    dp.add_handler(PreCheckoutQueryHandler(handle_users_reply))
+    dp.add_handler(MessageHandler(Filters.successful_payment,
+                                  successful_payment_handler))
     dp.add_error_handler(error_handler)
     updater.start_polling()
 
