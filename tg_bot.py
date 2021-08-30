@@ -239,7 +239,8 @@ def payment_handler(update, context):
 
 def precheckout_handler(update, context):
     query = update.pre_checkout_query
-    print(update)
+    # print(update)
+    # print(query)
     if query.invoice_payload != 'Custom-Payload':
         query.answer(ok=False, error_message="Something went wrong...")
     else:
@@ -248,8 +249,6 @@ def precheckout_handler(update, context):
 
 
 def successful_payment_handler(update, context):
-    """Confirms the successful payment."""
-    # do something after successfully receiving payment?
     update.message.reply_text("Thank you for your payment!")
     return 'START'
 
