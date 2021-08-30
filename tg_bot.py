@@ -230,9 +230,10 @@ def payment_handler(update, context):
     currency = "RUB"
     price = cart_items['meta']['display_price']['with_tax']['formatted']
     prices = [LabeledPrice("Test", int(price)*100)]
-    context.bot.send_invoice(
+    invoice_message = context.bot.send_invoice(
         chat_id, title, description, payload, provider_token, currency, prices
     )
+    context.user_data['invoice_message_id'] = invoice_message.message_id
     context.bot.delete_message(chat_id=chat_id, message_id=message_id)
     return 'HANDLE_PRECHECKOUT'
 
@@ -248,6 +249,9 @@ def precheckout_handler(update, context):
 
 def successful_payment_handler(update, context):
     update.message.reply_text("Thank you for your payment!")
+    chat_id = update.message.chat_id
+    invoice_message_id = context.user_data['invoice_message_id']
+    context.bot.delete_message(chat_id=chat_id, message_id=invoice_message_id)
 
 
 def handle_users_reply(update, context):
