@@ -228,7 +228,6 @@ def payment_handler(update, context):
     query.answer()
     chat_id = query.message.chat_id
     message_id = query.message.message_id
-    del_extra_invoice(chat_id, context)
     db = context.bot_data['db']
 
     cart_items = get_cart_items(context.bot_data['moltin_token'],
@@ -290,6 +289,8 @@ def handle_users_reply(update, context):
         return
     else:
         user_state = db.get(chat_id).decode("utf-8")
+
+    del_extra_invoice(chat_id, context)
 
     states_functions = {
         'START': start,
