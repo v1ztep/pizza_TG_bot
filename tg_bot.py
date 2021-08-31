@@ -56,6 +56,15 @@ def show_cart(context, chat_id, message_id):
     context.bot.delete_message(chat_id=chat_id, message_id=message_id)
 
 
+def del_extra_invoice(chat_id, context):
+    db = context.bot_data['db']
+    last_invoice = db.get(f'{chat_id}_invoice_message_id')
+    if last_invoice and last_invoice != b'clear':
+        context.bot.delete_message(chat_id=chat_id,
+                                   message_id=last_invoice.decode("utf-8"))
+        db.set(f'{chat_id}_invoice_message_id', 'clear')
+
+
 def start(update, context):
     context.user_data['menu_page'] = 0
     reply_markup = get_menu_keyboard(context)
@@ -219,21 +228,23 @@ def payment_handler(update, context):
     query.answer()
     chat_id = query.message.chat_id
     message_id = query.message.message_id
+    del_extra_invoice(chat_id, context)
+    db = context.bot_data['db']
+
     cart_items = get_cart_items(context.bot_data['moltin_token'],
                                 context.bot_data['moltin_secret'],
                                 chat_id)
-
     title = "Payment Example"
     description = "Payment Example using python-telegram-bot"
     payload = "Custom-Payload"
     provider_token = os.getenv('PAYMENT_TG_TOKEN')
     currency = "RUB"
-    price = cart_items['meta']['display_price']['with_tax']['formatted']
+    price = cart_items['meta']['display_price']['with_tax']['formatted'].replace(' ', '')
     prices = [LabeledPrice("Test", int(price)*100)]
     invoice_message = context.bot.send_invoice(
         chat_id, title, description, payload, provider_token, currency, prices
     )
-    context.user_data['invoice_message_id'] = invoice_message.message_id
+    db.set(f'{chat_id}_invoice_message_id', invoice_message.message_id)
     context.bot.delete_message(chat_id=chat_id, message_id=message_id)
     return 'HANDLE_PRECHECKOUT'
 
@@ -248,14 +259,17 @@ def precheckout_handler(update, context):
 
 
 def successful_payment_handler(update, context):
-    update.message.reply_text("Thank you for your payment!")
+    successful_payment_text = '''
+           Оплата прошла успешно!
+           Ожидайте курьера в ближайший час!
+           '''
+    update.message.reply_text(textwrap.dedent(successful_payment_text))
     chat_id = update.message.chat_id
-    invoice_message_id = context.user_data['invoice_message_id']
-    context.bot.delete_message(chat_id=chat_id, message_id=invoice_message_id)
+    del_extra_invoice(chat_id, context)
 
 
 def handle_users_reply(update, context):
-    db = get_database_connection()
+    db = context.bot_data['db']
     if update.message:
         user_reply = update.message.text
         chat_id = update.message.chat_id
@@ -311,6 +325,7 @@ def main():
     dp.bot_data['moltin_token'] = os.getenv('ELASTICPATH_CLIENT_ID')
     dp.bot_data['moltin_secret'] = os.getenv('ELASTICPATH_CLIENT_SECRET')
     dp.bot_data['geo_token'] = os.getenv('YANDEX_GEOCODER_API_KEY')
+    dp.bot_data['db'] = get_database_connection()
     dp.add_handler(CallbackQueryHandler(handle_users_reply))
     dp.add_handler(MessageHandler(Filters.text, handle_users_reply))
     dp.add_handler(MessageHandler(Filters.location, handle_users_reply))
