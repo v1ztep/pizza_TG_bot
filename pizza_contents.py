@@ -154,3 +154,32 @@ def get_distance_to_user(pizzeria, user_position):
     return distance.distance(user_position,
                              (pizzeria['latitude'], pizzeria['longitude'])
                              ).km
+
+
+def get_deliveryman_text(cart_items, distance_to_user):
+    text = '<b>Сообщение для курьера!</b>'
+    total_pizzas = 0
+    delivery_cost = get_delivery_cost(distance_to_user)
+    for product in cart_items['data']:
+        text += f'''
+            <b>{product['name']}</b>
+            {product['quantity']} пицц на сумму {product['meta']
+            ['display_price']['with_tax']['value']['formatted']}рублей
+            '''
+        total_pizzas += product['quantity']
+    text += f'''
+            <i>Необходимо доставить {total_pizzas} пицц на сумму: {cart_items['meta']
+            ['display_price']['with_tax']['formatted']}рублей</i> (<b>Оплачено</b>)
+            <b>К оплате за доставку: {delivery_cost}рублей</b>
+            '''
+    return textwrap.dedent(text)
+
+
+def get_delivery_cost(distance_to_user):
+    if distance_to_user <= 0.5:
+        delivery_cost = 0
+    elif distance_to_user <= 5:
+        delivery_cost = 100
+    else:
+        delivery_cost = 300
+    return delivery_cost
