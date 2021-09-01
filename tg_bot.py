@@ -258,6 +258,20 @@ def precheckout_handler(update, context):
     return 'START'
 
 
+def callback_alarm(context):
+    text = '''
+           <b>Сообщение юзеру с отложенным стартом</b> 
+           <i>(для примера 10 секунд)</i>
+           
+           Приятного аппетита! *место для рекламы*
+
+           *сообщение что делать если пицца не пришла*
+           '''
+    context.bot.send_message(chat_id=context.job.context,
+                             text=textwrap.dedent(text),
+                             parse_mode='HTML')
+
+
 def successful_payment_handler(update, context):
     successful_payment_text = '''
            Оплата прошла успешно!
@@ -265,6 +279,7 @@ def successful_payment_handler(update, context):
            '''
     update.message.reply_text(textwrap.dedent(successful_payment_text))
     user_chat_id = update.message.chat_id
+    context.job_queue.run_once(callback_alarm, 10, context=user_chat_id)
     del_extra_invoice(chat_id=user_chat_id, context=context)
 
     nearest_pizzeria = context.user_data['nearest_pizzeria']
