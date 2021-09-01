@@ -26,6 +26,7 @@ from moltin import remove_item_in_cart
 from pizza_contents import get_all_pizzerias
 from pizza_contents import get_cart_keyboard
 from pizza_contents import get_cart_text
+from pizza_contents import get_deliveryman_text
 from pizza_contents import get_description_keyboard
 from pizza_contents import get_description_text
 from pizza_contents import get_distance_to_user
@@ -263,8 +264,24 @@ def successful_payment_handler(update, context):
            Ожидайте курьера в ближайший час!
            '''
     update.message.reply_text(textwrap.dedent(successful_payment_text))
-    chat_id = update.message.chat_id
-    del_extra_invoice(chat_id, context)
+    user_chat_id = update.message.chat_id
+    del_extra_invoice(chat_id=user_chat_id, context=context)
+
+    nearest_pizzeria = context.user_data['nearest_pizzeria']
+    user_coordinates = context.user_data['user_coordinates']
+    distance_to_user = get_distance_to_user(
+        nearest_pizzeria,
+        (user_coordinates['latitude'], user_coordinates['longitude'])
+    )
+    cart_items = get_cart_items(context.bot_data['moltin_token'],
+                                context.bot_data['moltin_secret'],
+                                cart_id=user_chat_id)
+    text = get_deliveryman_text(cart_items, distance_to_user)
+    deliveryman_chat_id = nearest_pizzeria['deliveryman-tg-id']
+    context.bot.send_message(chat_id=deliveryman_chat_id, text=text, parse_mode='HTML')
+    context.bot.send_location(chat_id=deliveryman_chat_id,
+                              latitude=user_coordinates['latitude'],
+                              longitude=user_coordinates['longitude'])
 
 
 def handle_users_reply(update, context):
