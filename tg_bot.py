@@ -1,6 +1,7 @@
 import logging
 import os
 import textwrap
+from datetime import datetime
 from functools import partial
 
 import telegram
@@ -19,6 +20,7 @@ from connect_to_redis_db import get_database_connection
 from geolocation import fetch_coordinates
 from logs_handler import TelegramLogsHandler
 from moltin import add_product_to_cart
+from moltin import create_entry
 from moltin import get_cart_items
 from moltin import get_image
 from moltin import get_product
@@ -273,6 +275,8 @@ def delayed_message(context):
 
 
 def successful_payment_handler(update, context):
+    moltin_token = context.bot_data['moltin_token']
+    moltin_secret = context.bot_data['moltin_secret']
     successful_payment_text = '''
            Оплата прошла успешно!
            Ожидайте курьера в ближайший час!
@@ -288,15 +292,28 @@ def successful_payment_handler(update, context):
         nearest_pizzeria,
         (user_coordinates['latitude'], user_coordinates['longitude'])
     )
-    cart_items = get_cart_items(context.bot_data['moltin_token'],
-                                context.bot_data['moltin_secret'],
-                                cart_id=user_chat_id)
+    cart_items = get_cart_items(moltin_token, moltin_secret, cart_id=user_chat_id)
     text = get_deliveryman_text(cart_items, distance_to_user)
     deliveryman_chat_id = nearest_pizzeria['deliveryman-tg-id']
     context.bot.send_message(chat_id=deliveryman_chat_id, text=text, parse_mode='HTML')
     context.bot.send_location(chat_id=deliveryman_chat_id,
                               latitude=user_coordinates['latitude'],
                               longitude=user_coordinates['longitude'])
+    date_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+    user_name = f'{update.message.chat.first_name} {update.message.chat.last_name}'
+    entry_fields = {
+        'name': user_name,
+        'date': date_now,
+        'longitude': user_coordinates['longitude'],
+        'latitude': user_coordinates['longitude'],
+        'order': text
+    }
+    create_entry(
+        moltin_token= moltin_token,
+        moltin_secret= moltin_secret,
+        flow_slug= 'customer-address',
+        fields= entry_fields
+    )
 
 
 def handle_users_reply(update, context):
