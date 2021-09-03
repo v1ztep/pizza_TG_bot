@@ -21,9 +21,9 @@
 * Зарегистрироваться в CMS [Moltin](https://www.elasticpath.com/), забрать 
 `Client ID` и `Client secret`. Заполнить товары в 
 [CMS Catalog](https://dashboard.elasticpath.com/app/catalog/products) (либо 
-воспользоваться [`menu_upload.py`](#menu.json)), cоздать Flows c адресами пиццерий в 
+воспользоваться [`menu_upload.py`](#Загрузка-пицц)), cоздать Flows c адресами пиццерий в 
 [CMS Flows](https://dashboard.elasticpath.com/app/flows) `Pizzeria` (либо 
-воспользоваться [`address_upload.py`](#addresses.json)) и `сustomer-address` 
+воспользоваться [`address_upload.py`](#Загрузка-адресов)) и `сustomer-address` 
 куда будут внесены успешные заказы (необходимые поля: `name`, `date`, `longitude`, 
 `latitude`, `order`).
 
