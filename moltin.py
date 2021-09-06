@@ -13,9 +13,9 @@ def get_ep_access_token(moltin_token, moltin_secret):
     global EP_TOKEN_LIFETIME
 
     if not EP_TOKEN_LIFETIME or EP_TOKEN_LIFETIME < now_time:
-        EP_ACCESS_TOKEN, EP_TOKEN_LIFETIME = create_ep_access_token(moltin_token,
-                                                                    moltin_secret)
-
+        EP_ACCESS_TOKEN, EP_TOKEN_LIFETIME = create_ep_access_token(
+            moltin_token, moltin_secret
+        )
     return EP_ACCESS_TOKEN
 
 
@@ -43,8 +43,11 @@ def get_products(moltin_token, moltin_secret, page_offset, limit_per_page):
         'page[limit]': limit_per_page,
         'page[offset]': page_offset
     }
-    response = requests.get('https://api.moltin.com/v2/products',
-                            headers=headers, params=params)
+    response = requests.get(
+        'https://api.moltin.com/v2/products',
+        headers=headers,
+        params=params
+    )
     response.raise_for_status()
     return response.json()
 
@@ -54,8 +57,9 @@ def get_product(moltin_token, moltin_secret, product_id):
     headers = {
         'Authorization': f'Bearer {access_token}',
     }
-    response = requests.get(f'https://api.moltin.com/v2/products/{product_id}',
-                            headers=headers)
+    response = requests.get(
+        f'https://api.moltin.com/v2/products/{product_id}', headers=headers
+    )
     response.raise_for_status()
     return response.json()
 
@@ -65,8 +69,9 @@ def get_image(moltin_token, moltin_secret, image_id):
     headers = {
         'Authorization': f'Bearer {access_token}',
     }
-    response = requests.get(f'https://api.moltin.com/v2/files/{image_id}',
-                            headers=headers)
+    response = requests.get(
+        f'https://api.moltin.com/v2/files/{image_id}', headers=headers
+    )
     response.raise_for_status()
     image = response.json()['data']['link']['href']
     return image
@@ -95,8 +100,10 @@ def get_cart(moltin_token, moltin_secret, cart_id):
     headers = {
         'Authorization': f'Bearer {access_token}',
     }
-    response = requests.get(f'https://api.moltin.com/v2/carts/{cart_id}',
-                            headers=headers)
+    response = requests.get(
+        f'https://api.moltin.com/v2/carts/{cart_id}',
+        headers=headers
+    )
     response.raise_for_status()
     return response.json()
 
@@ -130,11 +137,11 @@ def create_customer(moltin_token, moltin_secret, name, email):
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json',
     }
-    data = {'data':
-                {'type': 'customer',
-                 'name': name,
-                 'email': email}
-            }
+    data = {'data': {
+        'type': 'customer',
+        'name': name,
+        'email': email
+    }}
     response = requests.post(url, headers=headers, json=data)
     response.raise_for_status()
     return response.json()
@@ -157,7 +164,7 @@ def create_product(moltin_token, moltin_secret, name, sku, description, price):
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json'
     }
-    data = {'data':{
+    data = {'data': {
         'type': 'product',
         'name': name,
         'slug': slugify(name),
@@ -172,8 +179,9 @@ def create_product(moltin_token, moltin_secret, name, sku, description, price):
         'status': 'live',
         'commodity_type': 'physical'
     }}
-    response = requests.post('https://api.moltin.com/v2/products',
-                            headers=headers, json=data)
+    response = requests.post(
+        'https://api.moltin.com/v2/products', headers=headers, json=data
+    )
     response.raise_for_status()
     return response.json()
 
@@ -186,8 +194,9 @@ def create_file(moltin_token, moltin_secret, image_url):
     files = {
         'file_location': (None, image_url)
     }
-    response = requests.post('https://api.moltin.com/v2/files',
-                             headers=headers, files=files)
+    response = requests.post(
+        'https://api.moltin.com/v2/files', headers=headers, files=files
+    )
     response.raise_for_status()
     return response.json()
 
@@ -204,7 +213,9 @@ def create_image_relationship(moltin_token, moltin_secret, product_id, image_id)
     }}
     response = requests.post(
         f'https://api.moltin.com/v2/products/{product_id}/relationships/main-image',
-        headers=headers, json=data)
+        headers=headers,
+        json=data
+    )
     response.raise_for_status()
     return response.json()
 
@@ -222,8 +233,9 @@ def create_flow(moltin_token, moltin_secret, name, description):
         'description': description,
         'enabled': True
     }}
-    response = requests.post('https://api.moltin.com/v2/flows',
-                             headers=headers, json=data)
+    response = requests.post(
+        'https://api.moltin.com/v2/flows', headers=headers, json=data
+    )
     response.raise_for_status()
     return response.json()
 
@@ -250,8 +262,9 @@ def create_field(moltin_token, moltin_secret, name, field_type, description,
             }}
         }
     }}
-    response = requests.post('https://api.moltin.com/v2/fields',
-                             headers=headers, json=data)
+    response = requests.post(
+        'https://api.moltin.com/v2/fields', headers=headers, json=data
+    )
     response.raise_for_status()
     return response.json()
 
@@ -266,8 +279,11 @@ def create_entry(moltin_token, moltin_secret, flow_slug, fields):
         "type": "entry",
     }}
     data['data'].update(fields)
-    response = requests.post(f'https://api.moltin.com/v2/flows/{flow_slug}/entries',
-                             headers=headers, json=data)
+    response = requests.post(
+        f'https://api.moltin.com/v2/flows/{flow_slug}/entries',
+        headers=headers,
+        json=data
+    )
     response.raise_for_status()
     return response.json()
 
