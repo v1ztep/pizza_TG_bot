@@ -12,21 +12,25 @@ from moltin import get_products
 def get_menu_keyboard(context):
     on_page = 6
     user_current_page = context.user_data['menu_page']
-    products_per_page = get_products(context.bot_data['moltin_token'],
-                                     context.bot_data['moltin_secret'],
-                                     page_offset=user_current_page * on_page,
-                                     limit_per_page=on_page)
+    products_per_page = get_products(
+        context.bot_data['moltin_token'],
+        context.bot_data['moltin_secret'],
+        page_offset=user_current_page * on_page,
+        limit_per_page=on_page
+    )
     keyboard = []
     for product in products_per_page['data']:
-        keyboard.append([InlineKeyboardButton(product['name'],
-                                              callback_data=product['id'])])
+        keyboard.append(
+            [InlineKeyboardButton(product['name'], callback_data=product['id'])]
+        )
     product_current_page = products_per_page['meta']['page']['current']
     product_total_page = products_per_page['meta']['page']['total']
     if product_total_page > 1:
-        pagination_buttons = get_pagination_buttons(product_current_page,
-                                                      product_total_page)
+        pagination_buttons = get_pagination_buttons(
+            product_current_page, product_total_page
+        )
         keyboard.append(pagination_buttons)
-    keyboard.append([InlineKeyboardButton("Корзина", callback_data='to_cart')])
+    keyboard.append([InlineKeyboardButton('Корзина', callback_data='to_cart')])
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
 
@@ -34,16 +38,16 @@ def get_menu_keyboard(context):
 def get_pagination_buttons(product_current_page, product_total_page):
     if product_current_page == 1:
         pagination_buttons = (
-            [InlineKeyboardButton("Следующая ➡️",callback_data='forward +1')]
+            [InlineKeyboardButton('Следующая ➡️', callback_data='forward +1')]
         )
     elif product_current_page == product_total_page:
         pagination_buttons = (
-            [InlineKeyboardButton("⬅️ Предыдущая",callback_data='back -1')]
+            [InlineKeyboardButton('⬅️ Предыдущая', callback_data='back -1')]
         )
     else:
         pagination_buttons = (
-            [InlineKeyboardButton("⬅️ Пред", callback_data='back -1'),
-             InlineKeyboardButton("След ➡️", callback_data='forward +1')]
+            [InlineKeyboardButton('⬅️ Пред', callback_data='back -1'),
+             InlineKeyboardButton('След ➡️', callback_data='forward +1')]
         )
     return pagination_buttons
 
@@ -59,11 +63,11 @@ def get_description_text(product):
 
 
 def get_description_keyboard(product_id):
-    keyboard = [[InlineKeyboardButton('Положить в корзину',
-                                      callback_data=product_id)],
-                [InlineKeyboardButton("Корзина", callback_data='to_cart')],
-                [InlineKeyboardButton("В меню", callback_data='to_menu')]
-                ]
+    keyboard = [
+        [InlineKeyboardButton('Положить в корзину', callback_data=product_id)],
+        [InlineKeyboardButton('Корзина', callback_data='to_cart')],
+        [InlineKeyboardButton('В меню', callback_data='to_menu')]
+    ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
 
@@ -87,11 +91,13 @@ def get_cart_text(cart_items):
 def get_cart_keyboard(cart_items):
     keyboard = []
     for product in cart_items['data']:
-        keyboard.append([InlineKeyboardButton(f"Убрать из корзины {product['name']}",
-                                              callback_data=product['id'])])
+        keyboard.append([InlineKeyboardButton(
+            f'Убрать из корзины {product["name"]}', callback_data=product['id']
+        )])
     if keyboard:
         keyboard.append(
-            [InlineKeyboardButton('Оплатить', callback_data='to_payment')])
+            [InlineKeyboardButton('Оплатить', callback_data='to_payment')]
+        )
     keyboard.append([InlineKeyboardButton('В меню', callback_data='to_menu')])
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
@@ -128,7 +134,8 @@ def get_location_keyboard(distance_to_user):
     keyboard = [[InlineKeyboardButton('Самовывоз', callback_data='self-pickup')]]
     if distance_to_user <= 20:
         keyboard.append(
-            [InlineKeyboardButton("Доставка", callback_data='delivery')])
+            [InlineKeyboardButton('Доставка', callback_data='delivery')]
+        )
     reply_markup = InlineKeyboardMarkup(keyboard)
     return reply_markup
 
@@ -138,22 +145,24 @@ def get_all_pizzerias(context, flow_slug='pizzeria'):
     pizzerias = []
 
     for current_page in count():
-        entries = get_entries(context.bot_data['moltin_token'],
-                              context.bot_data['moltin_secret'],
-                              flow_slug,
-                              page_offset=current_page * on_page,
-                              limit_per_page=on_page)
+        entries = get_entries(
+            context.bot_data['moltin_token'],
+            context.bot_data['moltin_secret'],
+            flow_slug,
+            page_offset=current_page * on_page,
+            limit_per_page=on_page
+        )
         pizzerias.extend(entries['data'])
-        if (current_page + 1) == entries['meta']['page']['total']:
+        if current_page + 1 == entries['meta']['page']['total']:
             break
-
     return pizzerias
 
 
 def get_distance_to_user(pizzeria, user_position):
-    return distance.distance(user_position,
-                             (pizzeria['latitude'], pizzeria['longitude'])
-                             ).km
+    return distance.distance(
+        user_position,
+        (pizzeria['latitude'], pizzeria['longitude'])
+    ).km
 
 
 def get_deliveryman_text(cart_items, distance_to_user):
