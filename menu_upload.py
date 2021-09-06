@@ -13,7 +13,7 @@ def main():
     moltin_token = os.getenv('ELASTICPATH_CLIENT_ID')
     moltin_secret = os.getenv('ELASTICPATH_CLIENT_SECRET')
 
-    with open("menu.json", "r", encoding="utf8") as file:
+    with open('menu.json', 'r', encoding='utf8') as file:
         menu_json = file.read()
     menu = json.loads(menu_json)
 
