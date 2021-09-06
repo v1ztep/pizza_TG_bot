@@ -247,18 +247,18 @@ def create_field(moltin_token, moltin_secret, name, field_type, description,
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json',
     }
-    data = {"data": {
-        "type": "field",
-        "name": name,
-        "slug": slugify(name),
-        "field_type": field_type,
-        "description": description,
-        "required": True,
-        "enabled": True,
-        "relationships": {
-            "flow": {"data": {
-                "type": "flow",
-                "id": flow_id
+    data = {'data': {
+        'type': 'field',
+        'name': name,
+        'slug': slugify(name),
+        'field_type': field_type,
+        'description': description,
+        'required': True,
+        'enabled': True,
+        'relationships': {
+            'flow': {'data': {
+                'type': 'flow',
+                'id': flow_id
             }}
         }
     }}
@@ -275,8 +275,8 @@ def create_entry(moltin_token, moltin_secret, flow_slug, fields):
         'Authorization': f'Bearer {access_token}',
         'Content-Type': 'application/json',
     }
-    data = {"data": {
-        "type": "entry",
+    data = {'data': {
+        'type': 'entry',
     }}
     data['data'].update(fields)
     response = requests.post(
