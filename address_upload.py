@@ -36,7 +36,7 @@ def main():
             flow_id
         )
 
-    with open("addresses.json", "r", encoding="utf8") as file:
+    with open('addresses.json', 'r', encoding='utf8') as file:
         addresses_json = file.read()
     addresses = json.loads(addresses_json)
 
