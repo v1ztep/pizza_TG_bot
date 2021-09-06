@@ -41,21 +41,28 @@ logger = logging.getLogger('pizza_bots logger')
 
 def show_menu(context, chat_id, message_id):
     menu_keyboard = get_menu_keyboard(context)
-    context.bot.send_message(chat_id=chat_id, text='Please choose:',
-                             reply_markup=menu_keyboard)
+    context.bot.send_message(
+        chat_id=chat_id,
+        text='Please choose:',
+        reply_markup=menu_keyboard
+    )
     context.bot.delete_message(chat_id=chat_id, message_id=message_id)
 
 
 def show_cart(context, chat_id, message_id):
-    cart_items = get_cart_items(context.bot_data['moltin_token'],
-                                context.bot_data['moltin_secret'],
-                                chat_id)
+    cart_items = get_cart_items(
+        context.bot_data['moltin_token'],
+        context.bot_data['moltin_secret'],
+        chat_id
+    )
     cart_text = get_cart_text(cart_items)
     cart_keyboard = get_cart_keyboard(cart_items)
-    context.bot.send_message(chat_id=chat_id,
-                             text=cart_text,
-                             reply_markup=cart_keyboard,
-                             parse_mode='HTML')
+    context.bot.send_message(
+        chat_id=chat_id,
+        text=cart_text,
+        reply_markup=cart_keyboard,
+        parse_mode='HTML'
+    )
     context.bot.delete_message(chat_id=chat_id, message_id=message_id)
 
 
@@ -63,8 +70,10 @@ def del_extra_invoice(chat_id, context):
     db = context.bot_data['db']
     last_invoice = db.get(f'{chat_id}_invoice_message_id')
     if last_invoice and last_invoice != b'clear':
-        context.bot.delete_message(chat_id=chat_id,
-                                   message_id=last_invoice.decode("utf-8"))
+        context.bot.delete_message(
+            chat_id=chat_id,
+            message_id=last_invoice.decode('utf-8')
+        )
         db.set(f'{chat_id}_invoice_message_id', 'clear')
 
 
@@ -85,29 +94,39 @@ def menu_handler(update, context):
         return 'HANDLE_CART'
     elif 'back' in query.data or 'forward' in query.data:
         current_user_page = context.user_data['menu_page']
-        context.user_data['menu_page'] = int(current_user_page) \
-                                         + int(query.data.split()[1])
+        context.user_data['menu_page'] = (
+                int(current_user_page) + int(query.data.split()[1])
+        )
         menu_keyboard = get_menu_keyboard(context)
-        context.bot.edit_message_text(chat_id=chat_id,
-                                      text='Please choose:',
-                                      reply_markup=menu_keyboard,
-                                      message_id=message_id)
+        context.bot.edit_message_text(
+            chat_id=chat_id,
+            text='Please choose:',
+            reply_markup=menu_keyboard,
+            message_id=message_id
+        )
         return 'HANDLE_MENU'
     product_id = query.data
-    product = get_product(context.bot_data['moltin_token'],
-                          context.bot_data['moltin_secret'],
-                          product_id)['data']
+    product = get_product(
+        context.bot_data['moltin_token'],
+        context.bot_data['moltin_secret'],
+        product_id
+    )['data']
     image_id = product['relationships']['main_image']['data']['id']
-    image = get_image(context.bot_data['moltin_token'],
-                      context.bot_data['moltin_secret'],
-                      image_id)
+    image = get_image(
+        context.bot_data['moltin_token'],
+        context.bot_data['moltin_secret'],
+        image_id
+    )
 
     description_text = get_description_text(product)
     description_keyboard = get_description_keyboard(product_id)
-    context.bot.send_photo(chat_id=chat_id, photo=image,
-                           caption=description_text,
-                           reply_markup=description_keyboard,
-                           parse_mode='HTML')
+    context.bot.send_photo(
+        chat_id=chat_id,
+        photo=image,
+        caption=description_text,
+        reply_markup=description_keyboard,
+        parse_mode='HTML'
+    )
     context.bot.delete_message(chat_id=chat_id, message_id=message_id)
     return 'HANDLE_DESCRIPTION'
 
@@ -125,11 +144,13 @@ def description_handler(update, context):
         return 'HANDLE_CART'
 
     product_id = query.data
-    add_product_to_cart(moltin_token=context.bot_data['moltin_token'],
-                        moltin_secret=context.bot_data['moltin_secret'],
-                        cart_id=chat_id,
-                        product_id=product_id,
-                        quantity=1)
+    add_product_to_cart(
+        moltin_token=context.bot_data['moltin_token'],
+        moltin_secret=context.bot_data['moltin_secret'],
+        cart_id=chat_id,
+        product_id=product_id,
+        quantity=1
+    )
     query.answer(text='Добавлено в корзину')
     return 'HANDLE_DESCRIPTION'
 
@@ -152,16 +173,21 @@ def cart_handler(update, context):
         return 'WAITING_LOCATION'
 
     cart_item_id = query.data
-    remaining_items = remove_item_in_cart(context.bot_data['moltin_token'],
-                                          context.bot_data['moltin_secret'],
-                                          chat_id, cart_item_id)
+    remaining_items = remove_item_in_cart(
+        context.bot_data['moltin_token'],
+        context.bot_data['moltin_secret'],
+        chat_id,
+        cart_item_id
+    )
     cart_text = get_cart_text(remaining_items)
     cart_keyboard = get_cart_keyboard(remaining_items)
-    context.bot.edit_message_text(chat_id=chat_id,
-                                  text=cart_text,
-                                  reply_markup=cart_keyboard,
-                                  message_id=message_id,
-                                  parse_mode='HTML')
+    context.bot.edit_message_text(
+        chat_id=chat_id,
+        text=cart_text,
+        reply_markup=cart_keyboard,
+        message_id=message_id,
+        parse_mode='HTML'
+    )
     return 'HANDLE_CART'
 
 
@@ -170,8 +196,7 @@ def location_handler(update, context):
         user_location = update.message.location
         user_lon = user_location.longitude
         user_lat = user_location.latitude
-    elif not fetch_coordinates(context.bot_data['geo_token'],
-                               update.message.text):
+    elif not fetch_coordinates(context.bot_data['geo_token'], update.message.text):
         text = f'''
                 Кажется вы неправильно ввели адрес: {update.message.text}
                 Пришлите ещё раз.
@@ -179,8 +204,10 @@ def location_handler(update, context):
         update.message.reply_text(text=textwrap.dedent(text))
         return 'WAITING_LOCATION'
     else:
-        user_lon, user_lat = fetch_coordinates(context.bot_data['geo_token'],
-                                               update.message.text)
+        user_lon, user_lat = fetch_coordinates(
+                                context.bot_data['geo_token'],
+                                update.message.text
+        )
     pizzerias = get_all_pizzerias(context)
     nearest_pizzeria = min(
         pizzerias,
@@ -209,18 +236,21 @@ def delivery_handler(update, context):
         text = f'''
                 Ждём вас в нашей пиццерии: <i><b>{nearest_pizzeria['address']}</b></i>.
                 '''
-        context.bot.edit_message_text(chat_id=chat_id,
-                                      text=text,
-                                      message_id=message_id,
-                                      parse_mode='HTML')
+        context.bot.edit_message_text(
+            chat_id=chat_id,
+            text=text,
+            message_id=message_id,
+            parse_mode='HTML'
+        )
         return 'START'
 
     context.bot.edit_message_text(
         chat_id=chat_id,
         text='Для оплаты нажмите кнопку <b>Оплатить</b>',
         message_id=message_id,
-        reply_markup=InlineKeyboardMarkup(
-            [[InlineKeyboardButton('Оплатить', callback_data='to_payment')]]),
+        reply_markup=InlineKeyboardMarkup([
+            [InlineKeyboardButton('Оплатить', callback_data='to_payment')]
+        ]),
         parse_mode='HTML'
     )
     return 'HANDLE_PAYMENT'
@@ -233,16 +263,18 @@ def payment_handler(update, context):
     message_id = query.message.message_id
     db = context.bot_data['db']
 
-    cart_items = get_cart_items(context.bot_data['moltin_token'],
-                                context.bot_data['moltin_secret'],
-                                chat_id)
-    title = "Payment Example"
-    description = "Payment Example using python-telegram-bot"
-    payload = "Custom-Payload"
+    cart_items = get_cart_items(
+        context.bot_data['moltin_token'],
+        context.bot_data['moltin_secret'],
+        chat_id
+    )
+    title = 'Payment Example'
+    description = 'Payment Example using python-telegram-bot'
+    payload = 'Custom-Payload'
     provider_token = os.getenv('PAYMENT_TG_TOKEN')
-    currency = "RUB"
+    currency = 'RUB'
     price = cart_items['meta']['display_price']['with_tax']['formatted'].replace(' ', '')
-    prices = [LabeledPrice("Test", int(price)*100)]
+    prices = [LabeledPrice('Test', int(price)*100)]
     invoice_message = context.bot.send_invoice(
         chat_id, title, description, payload, provider_token, currency, prices
     )
@@ -254,7 +286,7 @@ def payment_handler(update, context):
 def precheckout_handler(update, context):
     query = update.pre_checkout_query
     if query.invoice_payload != 'Custom-Payload':
-        query.answer(ok=False, error_message="Something went wrong...")
+        query.answer(ok=False, error_message='Something went wrong...')
         return 'HANDLE_PRECHECKOUT'
     query.answer(ok=True)
     return 'START'
@@ -296,9 +328,11 @@ def successful_payment_handler(update, context):
     text = get_deliveryman_text(cart_items, distance_to_user)
     deliveryman_chat_id = nearest_pizzeria['deliveryman-tg-id']
     context.bot.send_message(chat_id=deliveryman_chat_id, text=text, parse_mode='HTML')
-    context.bot.send_location(chat_id=deliveryman_chat_id,
-                              latitude=user_coordinates['latitude'],
-                              longitude=user_coordinates['longitude'])
+    context.bot.send_location(
+        chat_id=deliveryman_chat_id,
+        latitude=user_coordinates['latitude'],
+        longitude=user_coordinates['longitude']
+    )
     date_now = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
     user_name = f'{update.message.chat.first_name} {update.message.chat.last_name}'
     entry_fields = {
@@ -309,10 +343,10 @@ def successful_payment_handler(update, context):
         'order': text
     }
     create_entry(
-        moltin_token= moltin_token,
-        moltin_secret= moltin_secret,
-        flow_slug= 'customer-address',
-        fields= entry_fields
+        moltin_token=moltin_token,
+        moltin_secret=moltin_secret,
+        flow_slug='customer-address',
+        fields=entry_fields
     )
 
 
@@ -334,10 +368,10 @@ def handle_users_reply(update, context):
         return
     if user_reply == '/start':
         user_state = 'START'
-    elif update.message and db.get(chat_id).decode("utf-8") != 'WAITING_LOCATION':
+    elif update.message and db.get(chat_id).decode('utf-8') != 'WAITING_LOCATION':
         return
     else:
-        user_state = db.get(chat_id).decode("utf-8")
+        user_state = db.get(chat_id).decode('utf-8')
 
     del_extra_invoice(chat_id, context)
 
@@ -381,8 +415,9 @@ def main():
     dp.add_handler(MessageHandler(Filters.location, handle_users_reply))
     dp.add_handler(CommandHandler('start', handle_users_reply))
     dp.add_handler(PreCheckoutQueryHandler(handle_users_reply))
-    dp.add_handler(MessageHandler(Filters.successful_payment,
-                                  successful_payment_handler))
+    dp.add_handler(MessageHandler(
+        Filters.successful_payment, successful_payment_handler)
+    )
     dp.add_error_handler(error_handler)
     updater.start_polling()
 
