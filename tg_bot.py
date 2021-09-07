@@ -205,8 +205,8 @@ def location_handler(update, context):
         return 'WAITING_LOCATION'
     else:
         user_lon, user_lat = fetch_coordinates(
-                                context.bot_data['geo_token'],
-                                update.message.text
+            context.bot_data['geo_token'],
+            update.message.text
         )
     pizzerias = get_all_pizzerias(context)
     nearest_pizzeria = min(
