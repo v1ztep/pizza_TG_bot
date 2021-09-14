@@ -24,6 +24,44 @@ def verify():
     return "Hello world", 200
 
 
+def send_menu(recipient_id):
+    url = 'https://graph.facebook.com/v11.0/me/messages'
+    params = {"access_token": os.environ["FB_PAGE_ACCESS_TOKEN"]}
+    headers = {"Content-Type": "application/json"}
+    request_content = json.dumps({
+        "recipient": {
+            "id": recipient_id
+        },
+        "message": {
+            "attachment": {
+                "type": "template",
+                "payload": {
+                    "template_type": "generic",
+                    "elements": [
+                        {
+                            "title": "Заголовок",
+                            "subtitle": "Описание",
+                            "buttons": [
+                                {
+                                    "type": "postback",
+                                    "title": "Тут будет кнопка",
+                                    "payload": "DEVELOPER_DEFINED_PAYLOAD"
+                                }
+                            ]
+                        }
+                    ]
+                }
+            }
+        }
+    })
+    response = requests.post(
+        url, params=params, headers=headers, data=request_content
+    )
+    print(response.json())
+    response.raise_for_status()
+    return response.json()
+
+
 @app.route('/', methods=['POST'])
 def webhook():
     """
@@ -38,11 +76,12 @@ def webhook():
                     recipient_id = messaging_event["recipient"]["id"]  # the recipient's ID, which should be your page's facebook ID
                     message_text = messaging_event["message"]["text"]  # the message's text
                     send_message(sender_id, message_text)
+                    send_menu(sender_id)
     return "ok", 200
 
 
 def send_message(recipient_id, message_text):
-    params = {"access_token": os.environ["PAGE_ACCESS_TOKEN"]}
+    params = {"access_token": os.environ["FB_PAGE_ACCESS_TOKEN"]}
     headers = {"Content-Type": "application/json"}
     request_content = json.dumps({
         "recipient": {
@@ -52,7 +91,10 @@ def send_message(recipient_id, message_text):
             "text": message_text
         }
     })
-    response = requests.post("https://graph.facebook.com/v2.6/me/messages", params=params, headers=headers, data=request_content)
+    response = requests.post(
+        "https://graph.facebook.com/v2.6/me/messages",
+        params=params, headers=headers, data=request_content
+    )
     response.raise_for_status()
 
 if __name__ == '__main__':
