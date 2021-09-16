@@ -3,6 +3,7 @@ import os
 
 import requests
 
+from moltin import get_image
 from moltin import get_products
 
 
@@ -46,8 +47,15 @@ def get_elements(moltin_token, moltin_secret):
     )
     elements = []
     for product in products_per_page['data']:
+        image_id = product['relationships']['main_image']['data']['id']
+        image = get_image(
+            moltin_token,
+            moltin_secret,
+            image_id
+        )
         elements.append({
             "title": product['name'],
+            "image_url": image,
             "subtitle": product['description'],
             "buttons": [{
                     "type": "postback",
