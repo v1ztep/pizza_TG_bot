@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 import requests
 from flask import Flask, request
 
+from facebook_contents import send_menu
+
 load_dotenv()
 app = Flask(__name__)
 
@@ -24,44 +26,6 @@ def verify():
     return "Hello world", 200
 
 
-def send_menu(recipient_id):
-    url = 'https://graph.facebook.com/v11.0/me/messages'
-    params = {"access_token": os.environ["FB_PAGE_ACCESS_TOKEN"]}
-    headers = {"Content-Type": "application/json"}
-    request_content = json.dumps({
-        "recipient": {
-            "id": recipient_id
-        },
-        "message": {
-            "attachment": {
-                "type": "template",
-                "payload": {
-                    "template_type": "generic",
-                    "elements": [
-                        {
-                            "title": "Заголовок",
-                            "subtitle": "Описание",
-                            "buttons": [
-                                {
-                                    "type": "postback",
-                                    "title": "Тут будет кнопка",
-                                    "payload": "DEVELOPER_DEFINED_PAYLOAD"
-                                }
-                            ]
-                        }
-                    ]
-                }
-            }
-        }
-    })
-    response = requests.post(
-        url, params=params, headers=headers, data=request_content
-    )
-    print(response.json())
-    response.raise_for_status()
-    return response.json()
-
-
 @app.route('/', methods=['POST'])
 def webhook():
     """
@@ -75,7 +39,7 @@ def webhook():
                     sender_id = messaging_event["sender"]["id"]        # the facebook ID of the person sending you the message
                     recipient_id = messaging_event["recipient"]["id"]  # the recipient's ID, which should be your page's facebook ID
                     message_text = messaging_event["message"]["text"]  # the message's text
-                    send_message(sender_id, message_text)
+                    # send_message(sender_id, message_text)
                     send_menu(sender_id)
     return "ok", 200
 
