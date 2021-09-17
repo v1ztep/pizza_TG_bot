@@ -45,22 +45,43 @@ def get_elements(moltin_token, moltin_secret):
         page_offset=user_current_page * on_page,
         limit_per_page=on_page
     )
-    elements = []
+    elements = [get_generic_template(
+        title='Меню',
+        image_url='https://i.postimg.cc/cCCG3PHN/pizza-logo.png',
+        subtitle='Здесь вы можете выбрать один из вариантов',
+        buttons_title=('Корзина', 'Акции', 'Сделать заказ')
+    )]
     for product in products_per_page['data']:
         image_id = product['relationships']['main_image']['data']['id']
-        image = get_image(
+        image_url = get_image(
             moltin_token,
             moltin_secret,
             image_id
         )
-        elements.append({
-            "title": product['name'],
-            "image_url": image,
-            "subtitle": product['description'],
-            "buttons": [{
-                    "type": "postback",
-                    "title": "Добавить в корзину",
-                    "payload": "DEVELOPER_DEFINED_PAYLOAD"
-                }]
-        })
+        elements.append(
+            get_generic_template(
+                title=product['name'],
+                image_url=image_url,
+                subtitle=product['description'],
+                buttons_title=['Добавить в корзину']
+            )
+        )
     return elements
+
+
+def get_generic_template(title, image_url, subtitle, buttons_title):
+    buttons = []
+    for button_title in buttons_title:
+        buttons.append({
+            "type": "postback",
+            "title": button_title,
+            "payload": "DEVELOPER_DEFINED_PAYLOAD"
+        })
+    template = {
+        "title": title,
+        "image_url": image_url,
+        "subtitle": subtitle,
+        "buttons": buttons
+    }
+    return template
+
