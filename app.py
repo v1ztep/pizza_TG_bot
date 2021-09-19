@@ -40,7 +40,7 @@ def webhook():
                     recipient_id = messaging_event["recipient"]["id"]  # the recipient's ID, which should be your page's facebook ID
                     message_text = messaging_event["message"]["text"]  # the message's text
                     # send_message(sender_id, message_text)
-                    send_menu(sender_id)
+                    send_menu(sender_id, 'main')
     return "ok", 200
 
 
@@ -60,6 +60,7 @@ def send_message(recipient_id, message_text):
         params=params, headers=headers, data=request_content
     )
     response.raise_for_status()
+
 
 if __name__ == '__main__':
     app.run(debug=True)
