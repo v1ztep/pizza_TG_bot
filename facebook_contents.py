@@ -5,12 +5,13 @@ import requests
 
 from moltin import get_image
 from moltin import get_products
+from moltin import get_products_by_category_id
 
 
-def send_menu(recipient_id):
+def send_menu(recipient_id, category):
     moltin_token = os.environ["ELASTICPATH_CLIENT_ID"]
     moltin_secret = os.environ["ELASTICPATH_CLIENT_SECRET"]
-    elements = get_elements(moltin_token, moltin_secret)
+    elements = get_elements(moltin_token, moltin_secret, category)
     url = 'https://graph.facebook.com/v11.0/me/messages'
     params = {"access_token": os.environ["FB_PAGE_ACCESS_TOKEN"]}
     headers = {"Content-Type": "application/json"}
@@ -36,14 +37,15 @@ def send_menu(recipient_id):
     return response.json()
 
 
-def get_elements(moltin_token, moltin_secret):
-    user_current_page = 0
-    on_page = 5
-    products_per_page = get_products(
-        moltin_token,
-        moltin_secret,
-        page_offset=user_current_page * on_page,
-        limit_per_page=on_page
+def get_elements(moltin_token, moltin_secret, category):
+    page_offset = 0
+    limit_per_page = 10
+    with open("categories_id.json", "r") as file:
+        categories_id = json.load(file)
+    products_per_page = get_products_by_category_id(
+        moltin_token, moltin_secret,
+        page_offset, limit_per_page,
+        category_id=categories_id[category]
     )
     elements = [get_generic_template(
         title='Меню',
