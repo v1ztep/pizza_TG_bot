@@ -305,7 +305,7 @@ def get_entries(moltin_token, moltin_secret, flow_slug, limit_per_page, page_off
 
 
 def get_flows(moltin_token, moltin_secret):
-    url = f'https://api.moltin.com/v2/flows/'
+    url = 'https://api.moltin.com/v2/flows/'
     access_token = get_ep_access_token(moltin_token, moltin_secret)
     headers = {
         'Authorization': f'Bearer {access_token}',
@@ -334,5 +334,18 @@ def get_products_by_category_id(
         headers=headers,
         params=params
     )
+    response.raise_for_status()
+    return response.json()
+
+
+def get_all_categories(moltin_token, moltin_secret):
+    url = 'https://api.moltin.com/v2/categories'
+    access_token = get_ep_access_token(moltin_token, moltin_secret)
+    headers = {
+        'Authorization': f'Bearer {access_token}',
+    }
+    response = requests.get(url, headers=headers)
+    with open('response_categories.json', "w", encoding='utf8') as file:
+        json.dump(response.json(), file, ensure_ascii=False, indent=4)
     response.raise_for_status()
     return response.json()
