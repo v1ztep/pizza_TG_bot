@@ -3,6 +3,7 @@ import os
 
 import requests
 
+from moltin import get_all_categories
 from moltin import get_image
 from moltin import get_products
 from moltin import get_products_by_category_id
@@ -37,12 +38,19 @@ def send_menu(recipient_id, category):
     return response.json()
 
 
+def get_categories(moltin_token, moltin_secret):
+    categories = {}
+    all_categories = get_all_categories(moltin_token, moltin_secret)
+    for category in all_categories['data']:
+        categories.update({category['name']:category['id']})
+    return categories
+
+
 def get_elements(moltin_token, moltin_secret, category):
     page_offset = 0
     limit_per_page = 10
-    with open("categories_id.json", "r") as file:
-        categories_id = json.load(file)
-    products_per_page = get_products_by_category_id(
+    categories_id = get_categories(moltin_token, moltin_secret)
+    products = get_products_by_category_id(
         moltin_token, moltin_secret,
         page_offset, limit_per_page,
         category_id=categories_id[category]
@@ -53,7 +61,7 @@ def get_elements(moltin_token, moltin_secret, category):
         subtitle='Здесь вы можете выбрать один из вариантов',
         buttons_title=('Корзина', 'Акции', 'Сделать заказ')
     )]
-    for product in products_per_page['data']:
+    for product in products['data']:
         image_id = product['relationships']['main_image']['data']['id']
         image_url = get_image(
             moltin_token,
@@ -68,6 +76,16 @@ def get_elements(moltin_token, moltin_secret, category):
                 buttons_title=['Добавить в корзину']
             )
         )
+    categories_name = list(categories_id.keys())
+    categories_name.remove(category)
+    elements.append(
+        get_generic_template(
+            title='Не нашли нужную пиццу?',
+            image_url='https://i.postimg.cc/656vP91V/few-pizzas.jpg',
+            subtitle='Остальные пиццы можно посмотреть в других категориях',
+            buttons_title=categories_name
+        )
+    )
     return elements
 
 
@@ -86,4 +104,3 @@ def get_generic_template(title, image_url, subtitle, buttons_title):
         "buttons": buttons
     }
     return template
-
