@@ -2,7 +2,5 @@
 .idea
 venv
 __pycache__
-response.json
 my_test.py
-menu.json
-addresses.json
+*.json
