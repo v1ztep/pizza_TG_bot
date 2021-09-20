@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import requests
 from flask import Flask, request
 
+from connect_to_redis_db import get_database_connection
 from facebook_contents import send_menu
 
 load_dotenv()
@@ -40,8 +41,31 @@ def webhook():
                     recipient_id = messaging_event["recipient"]["id"]  # the recipient's ID, which should be your page's facebook ID
                     message_text = messaging_event["message"]["text"]  # the message's text
                     # send_message(sender_id, message_text)
-                    send_menu(sender_id, 'Основные')
+                    # send_menu(sender_id, 'Основные')
+                    handle_users_reply(sender_id, message_text)
     return "ok", 200
+
+
+def handle_start(sender_id, message_text):
+    send_menu(sender_id, 'Основные')
+    return "START"
+
+
+def handle_users_reply(sender_id, message_text):
+    db = get_database_connection()
+    states_functions = {
+        'START': handle_start,
+    }
+    recorded_state = db.get(f'fb_{sender_id}')
+    if not recorded_state or recorded_state.decode("utf-8") not in states_functions.keys():
+        user_state = "START"
+    else:
+        user_state = recorded_state.decode("utf-8")
+    if message_text == "/start":
+        user_state = "START"
+    state_handler = states_functions[user_state]
+    next_state = state_handler(sender_id, message_text)
+    db.set(f'fb_{sender_id}', next_state)
 
 
 def send_message(recipient_id, message_text):
