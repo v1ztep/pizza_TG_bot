@@ -59,7 +59,8 @@ def get_elements(moltin_token, moltin_secret, category):
         title='Меню',
         image_url='https://i.postimg.cc/cCCG3PHN/pizza-logo.png',
         subtitle='Здесь вы можете выбрать один из вариантов',
-        buttons_title=('Корзина', 'Акции', 'Сделать заказ')
+        buttons_payload=dict.fromkeys(['Корзина', 'Акции', 'Сделать заказ'],
+                                        'DEVELOPER_DEFINED_PAYLOAD')
     )]
     for product in products['data']:
         image_id = product['relationships']['main_image']['data']['id']
@@ -73,29 +74,28 @@ def get_elements(moltin_token, moltin_secret, category):
                 title=product['name'],
                 image_url=image_url,
                 subtitle=product['description'],
-                buttons_title=['Добавить в корзину']
+                buttons_payload={'Добавить в корзину': 'DEVELOPER_DEFINED_PAYLOAD'}
             )
         )
-    categories_name = list(categories_id.keys())
-    categories_name.remove(category)
+    categories_id.pop(category)
     elements.append(
         get_generic_template(
             title='Не нашли нужную пиццу?',
             image_url='https://i.postimg.cc/656vP91V/few-pizzas.jpg',
             subtitle='Остальные пиццы можно посмотреть в других категориях',
-            buttons_title=categories_name
+            buttons_payload=categories_id
         )
     )
     return elements
 
 
-def get_generic_template(title, image_url, subtitle, buttons_title):
+def get_generic_template(title, image_url, subtitle, buttons_payload):
     buttons = []
-    for button_title in buttons_title:
+    for button_title, payload in buttons_payload.items():
         buttons.append({
             "type": "postback",
             "title": button_title,
-            "payload": "DEVELOPER_DEFINED_PAYLOAD"
+            "payload": payload
         })
     template = {
         "title": title,
