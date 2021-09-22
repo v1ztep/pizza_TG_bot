@@ -4,15 +4,15 @@ import os
 import requests
 
 from moltin import get_all_categories
+from moltin import get_cart_items
 from moltin import get_image
-from moltin import get_products
 from moltin import get_products_by_category_id
 
 
 def send_menu(recipient_id, category):
     moltin_token = os.environ["ELASTICPATH_CLIENT_ID"]
     moltin_secret = os.environ["ELASTICPATH_CLIENT_SECRET"]
-    elements = get_elements(moltin_token, moltin_secret, category)
+    elements = get_menu_elements(moltin_token, moltin_secret, category)
     url = 'https://graph.facebook.com/v11.0/me/messages'
     params = {"access_token": os.environ["FB_PAGE_ACCESS_TOKEN"]}
     headers = {"Content-Type": "application/json"}
@@ -33,12 +33,12 @@ def send_menu(recipient_id, category):
     response = requests.post(
         url, params=params, headers=headers, data=request_content
     )
-    print(response.json())
+    print('send_menu', response.json())
     response.raise_for_status()
     return response.json()
 
 
-def get_categories(moltin_token, moltin_secret):
+def get_categories_id(moltin_token, moltin_secret):
     categories = {}
     all_categories = get_all_categories(moltin_token, moltin_secret)
     for category in all_categories['data']:
@@ -46,10 +46,10 @@ def get_categories(moltin_token, moltin_secret):
     return categories
 
 
-def get_elements(moltin_token, moltin_secret, category):
+def get_menu_elements(moltin_token, moltin_secret, category):
     page_offset = 0
     limit_per_page = 10
-    categories_id = get_categories(moltin_token, moltin_secret)
+    categories_id = get_categories_id(moltin_token, moltin_secret)
     products = get_products_by_category_id(
         moltin_token, moltin_secret,
         page_offset, limit_per_page,
@@ -59,8 +59,10 @@ def get_elements(moltin_token, moltin_secret, category):
         title='Меню',
         image_url='https://i.postimg.cc/cCCG3PHN/pizza-logo.png',
         subtitle='Здесь вы можете выбрать один из вариантов',
-        buttons_payload=dict.fromkeys(['Корзина', 'Акции', 'Сделать заказ'],
-                                        'DEVELOPER_DEFINED_PAYLOAD')
+        buttons_payload=dict.fromkeys(
+            ['Корзина', 'Акции', 'Сделать заказ'],
+            'DEVELOPER_DEFINED_PAYLOAD'
+        )
     )]
     for product in products['data']:
         image_id = product['relationships']['main_image']['data']['id']
@@ -74,7 +76,9 @@ def get_elements(moltin_token, moltin_secret, category):
                 title=product['name'],
                 image_url=image_url,
                 subtitle=product['description'],
-                buttons_payload={'Добавить в корзину': 'DEVELOPER_DEFINED_PAYLOAD'}
+                buttons_payload={
+                    'Добавить в корзину': f"{product['id']} {product['name']}"
+                }
             )
         )
     categories_id.pop(category)
@@ -86,6 +90,68 @@ def get_elements(moltin_token, moltin_secret, category):
             buttons_payload=categories_id
         )
     )
+    return elements
+
+
+def send_cart(recipient_id):
+    moltin_token = os.environ["ELASTICPATH_CLIENT_ID"]
+    moltin_secret = os.environ["ELASTICPATH_CLIENT_SECRET"]
+    elements = get_cart_elements(moltin_token, moltin_secret, recipient_id)
+    url = 'https://graph.facebook.com/v11.0/me/messages'
+    params = {"access_token": os.environ["FB_PAGE_ACCESS_TOKEN"]}
+    headers = {"Content-Type": "application/json"}
+    request_content = json.dumps({
+        "recipient": {
+            "id": recipient_id
+        },
+        "message": {
+            "attachment": {
+                "type": "template",
+                "payload": {
+                    "template_type": "generic",
+                    "elements": elements
+                }
+            }
+        }
+    })
+    response = requests.post(
+        url, params=params, headers=headers, data=request_content
+    )
+    print('send_cart', response.json())
+    response.raise_for_status()
+    return response.json()
+
+
+def get_cart_elements(moltin_token, moltin_secret, recipient_id):
+    cart_items = get_cart_items(
+        moltin_token,
+        moltin_secret,
+        f'fb_{recipient_id}'
+    )
+    elements = [get_generic_template(
+        title=f'''
+        К оплате: {cart_items['meta']['display_price']['with_tax']['formatted']}рублей
+        ''',
+        image_url='https://i.postimg.cc/6pc6968R/cart.jpg',
+        subtitle=None,
+        buttons_payload=dict.fromkeys(
+            ['Самовывоз', 'Доставка', 'К меню'],
+            'DEVELOPER_DEFINED_PAYLOAD'
+        )
+    )]
+    for product in cart_items['data']:
+        image_url = product['image']['href']
+        elements.append(
+            get_generic_template(
+                title=f"{product['name']} ({product['quantity']} шт.)",
+                image_url=image_url,
+                subtitle=product['description'],
+                buttons_payload={
+                    'Добавить ещё одну': f"{product['id']} {product['name']}",
+                    'Убрать из корзины': f"{product['id']} {product['name']}"
+                }
+            )
+        )
     return elements
 
 

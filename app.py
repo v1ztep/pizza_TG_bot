@@ -1,14 +1,14 @@
 import os
-import sys
 import json
-from datetime import datetime
 from dotenv import load_dotenv
 
 import requests
 from flask import Flask, request
 
 from connect_to_redis_db import get_database_connection
+from facebook_contents import send_cart
 from facebook_contents import send_menu
+from moltin import add_product_to_cart
 
 load_dotenv()
 app = Flask(__name__)
@@ -16,9 +16,6 @@ app = Flask(__name__)
 
 @app.route('/', methods=['GET'])
 def verify():
-    """
-    При верификации вебхука у Facebook он отправит запрос на этот адрес. На него нужно ответить VERIFY_TOKEN.
-    """
     if request.args.get("hub.mode") == "subscribe" and request.args.get("hub.challenge"):
         if not request.args.get("hub.verify_token") == os.environ["VERIFY_TOKEN"]:
             return "Verification token mismatch", 403
@@ -29,45 +26,71 @@ def verify():
 
 @app.route('/', methods=['POST'])
 def webhook():
-    """
-    Основной вебхук, на который будут приходить сообщения от Facebook.
-    """
     data = json.loads(request.data.decode('utf-8'))
     print(data)
     if data["object"] == "page":
         for entry in data["entry"]:
             for messaging_event in entry["messaging"]:
-                if messaging_event.get("message"):  # someone sent us a message
-                    sender_id = messaging_event["sender"]["id"]        # the facebook ID of the person sending you the message
-                    recipient_id = messaging_event["recipient"]["id"]  # the recipient's ID, which should be your page's facebook ID
-                    message_text = messaging_event["message"]["text"]  # the message's text
+                if messaging_event.get("message"):
+                    sender_id = messaging_event["sender"]["id"]
+                    recipient_id = messaging_event["recipient"]["id"]
+                    message_text = messaging_event["message"]["text"]
                     # send_message(sender_id, message_text)
                     # send_menu(sender_id, 'Основные')
-                    handle_users_reply(sender_id, 'Основные')
+                    handle_users_reply(sender_id, '/start')
                 elif messaging_event.get("postback"):
                     sender_id = messaging_event["sender"]["id"]
-                    payload_title = messaging_event["postback"]["title"]
-                    handle_users_reply(sender_id, payload_title)
+                    postback = messaging_event["postback"]
+                    print(postback)
+                    handle_users_reply(sender_id, postback)
     return "ok", 200
 
 
 def handle_start(sender_id, message_text):
-    send_menu(sender_id, message_text)
-    return "START"
+    send_menu(sender_id, 'Основные')
+    return 'HANDLE_MENU'
+
+
+def menu_handler(sender_id, message_text):
+    if message_text['title'] in ('Основные', 'Особые', 'Сытные', 'Острые'):
+        send_menu(sender_id, message_text['title'])
+        return 'HANDLE_MENU'
+    elif message_text['title'] == 'Добавить в корзину':
+        add_product_to_cart(
+            moltin_token=os.environ["ELASTICPATH_CLIENT_ID"],
+            moltin_secret=os.environ["ELASTICPATH_CLIENT_SECRET"],
+            cart_id=f'fb_{sender_id}',
+            product_id=message_text['payload'].split()[0],
+            quantity=1
+        )
+        send_message(
+            sender_id,
+            f'В корзину добавлена пицца {message_text["payload"].split(maxsplit=1)[1]}'
+        )
+        return 'HANDLE_MENU'
+    elif message_text['title'] == 'Корзина':
+        send_cart(sender_id)
+        return 'HANDLE_CART'
+
+
+def cart_handler(sender_id, message_text):
+    pass
 
 
 def handle_users_reply(sender_id, message_text):
     db = get_database_connection()
     states_functions = {
         'START': handle_start,
+        'HANDLE_MENU': menu_handler,
+        'HANDLE_CART': cart_handler
     }
     recorded_state = db.get(f'fb_{sender_id}')
     if not recorded_state or recorded_state.decode("utf-8") not in states_functions.keys():
         user_state = "START"
     else:
         user_state = recorded_state.decode("utf-8")
-    if message_text == "/start":
-        user_state = "START"
+    if message_text == '/start':
+        user_state = 'START'
     state_handler = states_functions[user_state]
     next_state = state_handler(sender_id, message_text)
     db.set(f'fb_{sender_id}', next_state)
