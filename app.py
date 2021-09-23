@@ -74,7 +74,9 @@ def menu_handler(sender_id, message_text):
 
 
 def cart_handler(sender_id, message_text):
-    pass
+    if message_text['title'] == 'К меню':
+        send_menu(sender_id, 'Основные')
+        return 'HANDLE_MENU'
 
 
 def handle_users_reply(sender_id, message_text):
