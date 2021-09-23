@@ -147,7 +147,7 @@ def get_cart_elements(moltin_token, moltin_secret, recipient_id):
                 image_url=image_url,
                 subtitle=product['description'],
                 buttons_payload={
-                    'Добавить ещё одну': f"{product['id']} {product['name']}",
+                    'Добавить ещё одну': f"{product['product_id']} {product['name']}",
                     'Убрать из корзины': f"{product['id']} {product['name']}"
                 }
             )
