@@ -9,6 +9,7 @@ from connect_to_redis_db import get_database_connection
 from facebook_contents import send_cart
 from facebook_contents import send_menu
 from moltin import add_product_to_cart
+from moltin import remove_item_in_cart
 
 load_dotenv()
 app = Flask(__name__)
@@ -92,7 +93,18 @@ def cart_handler(sender_id, message_text):
         send_cart(sender_id)
         return 'HANDLE_CART'
     elif message_text['title'] == 'Убрать из корзины':
-        pass
+        remove_item_in_cart(
+            moltin_token=os.environ["ELASTICPATH_CLIENT_ID"],
+            moltin_secret=os.environ["ELASTICPATH_CLIENT_SECRET"],
+            cart_id=f'fb_{sender_id}',
+            cart_item_id=message_text['payload'].split()[0]
+        )
+        send_message(
+            sender_id,
+            f'Пицца {message_text["payload"].split(maxsplit=1)[1]} удалена из корзины'
+        )
+        send_cart(sender_id)
+        return 'HANDLE_CART'
 
 
 def handle_users_reply(sender_id, message_text):
