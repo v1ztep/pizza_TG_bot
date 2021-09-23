@@ -77,6 +77,22 @@ def cart_handler(sender_id, message_text):
     if message_text['title'] == 'К меню':
         send_menu(sender_id, 'Основные')
         return 'HANDLE_MENU'
+    elif message_text['title'] == 'Добавить ещё одну':
+        add_product_to_cart(
+            moltin_token=os.environ["ELASTICPATH_CLIENT_ID"],
+            moltin_secret=os.environ["ELASTICPATH_CLIENT_SECRET"],
+            cart_id=f'fb_{sender_id}',
+            product_id=message_text['payload'].split()[0],
+            quantity=1
+        )
+        send_message(
+            sender_id,
+            f'В корзину добавлена пицца {message_text["payload"].split(maxsplit=1)[1]}'
+        )
+        send_cart(sender_id)
+        return 'HANDLE_CART'
+    elif message_text['title'] == 'Убрать из корзины':
+        pass
 
 
 def handle_users_reply(sender_id, message_text):
