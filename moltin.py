@@ -315,7 +315,7 @@ def get_flows(moltin_token, moltin_secret):
     return response.json()
 
 
-def get_products_by_category_id(
+def get_products_by_category(
         moltin_token, moltin_secret,
         page_offset, limit_per_page,
         category_id
@@ -345,7 +345,5 @@ def get_all_categories(moltin_token, moltin_secret):
         'Authorization': f'Bearer {access_token}',
     }
     response = requests.get(url, headers=headers)
-    with open('response_categories.json', "w", encoding='utf8') as file:
-        json.dump(response.json(), file, ensure_ascii=False, indent=4)
     response.raise_for_status()
     return response.json()
