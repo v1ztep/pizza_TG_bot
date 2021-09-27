@@ -28,7 +28,6 @@ def verify():
 @app.route('/', methods=['POST'])
 def webhook():
     data = json.loads(request.data.decode('utf-8'))
-    print(data)
     if data["object"] == "page":
         for entry in data["entry"]:
             for messaging_event in entry["messaging"]:
@@ -42,19 +41,18 @@ def webhook():
                 elif messaging_event.get("postback"):
                     sender_id = messaging_event["sender"]["id"]
                     postback = messaging_event["postback"]
-                    print(postback)
                     handle_users_reply(sender_id, postback)
     return "ok", 200
 
 
-def handle_start(sender_id, message_text):
-    send_menu(sender_id, 'Основные')
+def handle_start(sender_id, message_text, db):
+    send_menu(sender_id, 'Основные', db)
     return 'HANDLE_MENU'
 
 
-def menu_handler(sender_id, message_text):
+def menu_handler(sender_id, message_text, db):
     if message_text['title'] in ('Основные', 'Особые', 'Сытные', 'Острые'):
-        send_menu(sender_id, message_text['title'])
+        send_menu(sender_id, message_text['title'], db)
         return 'HANDLE_MENU'
     elif message_text['title'] == 'Добавить в корзину':
         add_product_to_cart(
@@ -74,9 +72,9 @@ def menu_handler(sender_id, message_text):
         return 'HANDLE_CART'
 
 
-def cart_handler(sender_id, message_text):
+def cart_handler(sender_id, message_text, db):
     if message_text['title'] == 'К меню':
-        send_menu(sender_id, 'Основные')
+        send_menu(sender_id, 'Основные', db)
         return 'HANDLE_MENU'
     elif message_text['title'] == 'Добавить ещё одну':
         add_product_to_cart(
@@ -122,7 +120,7 @@ def handle_users_reply(sender_id, message_text):
     if message_text == '/start':
         user_state = 'START'
     state_handler = states_functions[user_state]
-    next_state = state_handler(sender_id, message_text)
+    next_state = state_handler(sender_id, message_text, db)
     db.set(f'fb_{sender_id}', next_state)
 
 
