@@ -17,28 +17,28 @@ app = Flask(__name__)
 
 @app.route('/', methods=['GET'])
 def verify():
-    if request.args.get("hub.mode") == "subscribe" and request.args.get("hub.challenge"):
-        if not request.args.get("hub.verify_token") == os.environ["FB_APP_VERIFY_TOKEN"]:
-            return "Verification token mismatch", 403
-        return request.args["hub.challenge"], 200
+    if request.args.get('hub.mode') == 'subscribe' and request.args.get('hub.challenge'):
+        if not request.args.get('hub.verify_token') == os.environ['FB_APP_VERIFY_TOKEN']:
+            return 'Verification token mismatch', 403
+        return request.args['hub.challenge'], 200
 
-    return "Hello world", 200
+    return 'Hello world', 200
 
 
 @app.route('/', methods=['POST'])
 def webhook():
     data = json.loads(request.data.decode('utf-8'))
-    if data["object"] == "page":
-        for entry in data["entry"]:
-            for messaging_event in entry["messaging"]:
-                if messaging_event.get("message"):
-                    sender_id = messaging_event["sender"]["id"]
+    if data['object'] == 'page':
+        for entry in data['entry']:
+            for messaging_event in entry['messaging']:
+                if messaging_event.get('message'):
+                    sender_id = messaging_event['sender']['id']
                     handle_users_reply(sender_id, '/start')
-                elif messaging_event.get("postback"):
-                    sender_id = messaging_event["sender"]["id"]
-                    postback = messaging_event["postback"]
+                elif messaging_event.get('postback'):
+                    sender_id = messaging_event['sender']['id']
+                    postback = messaging_event['postback']
                     handle_users_reply(sender_id, postback)
-    return "ok", 200
+    return 'ok', 200
 
 
 def handle_start(sender_id, message_text, db):
@@ -52,8 +52,8 @@ def menu_handler(sender_id, message_text, db):
         return 'HANDLE_MENU'
     elif message_text['title'] == 'Добавить в корзину':
         add_product_to_cart(
-            moltin_token=os.environ["ELASTICPATH_CLIENT_ID"],
-            moltin_secret=os.environ["ELASTICPATH_CLIENT_SECRET"],
+            moltin_token=os.environ['ELASTICPATH_CLIENT_ID'],
+            moltin_secret=os.environ['ELASTICPATH_CLIENT_SECRET'],
             cart_id=f'fb_{sender_id}',
             product_id=message_text['payload'].split()[0],
             quantity=1
@@ -74,8 +74,8 @@ def cart_handler(sender_id, message_text, db):
         return 'HANDLE_MENU'
     elif message_text['title'] == 'Добавить ещё одну':
         add_product_to_cart(
-            moltin_token=os.environ["ELASTICPATH_CLIENT_ID"],
-            moltin_secret=os.environ["ELASTICPATH_CLIENT_SECRET"],
+            moltin_token=os.environ['ELASTICPATH_CLIENT_ID'],
+            moltin_secret=os.environ['ELASTICPATH_CLIENT_SECRET'],
             cart_id=f'fb_{sender_id}',
             product_id=message_text['payload'].split()[0],
             quantity=1
@@ -88,8 +88,8 @@ def cart_handler(sender_id, message_text, db):
         return 'HANDLE_CART'
     elif message_text['title'] == 'Убрать из корзины':
         remove_item_in_cart(
-            moltin_token=os.environ["ELASTICPATH_CLIENT_ID"],
-            moltin_secret=os.environ["ELASTICPATH_CLIENT_SECRET"],
+            moltin_token=os.environ['ELASTICPATH_CLIENT_ID'],
+            moltin_secret=os.environ['ELASTICPATH_CLIENT_SECRET'],
             cart_id=f'fb_{sender_id}',
             cart_item_id=message_text['payload'].split()[0]
         )
@@ -109,10 +109,10 @@ def handle_users_reply(sender_id, message_text):
         'HANDLE_CART': cart_handler
     }
     recorded_state = db.get(f'fb_{sender_id}')
-    if not recorded_state or recorded_state.decode("utf-8") not in states_functions.keys():
-        user_state = "START"
+    if not recorded_state or recorded_state.decode('utf-8') not in states_functions.keys():
+        user_state = 'START'
     else:
-        user_state = recorded_state.decode("utf-8")
+        user_state = recorded_state.decode('utf-8')
     if message_text == '/start':
         user_state = 'START'
     state_handler = states_functions[user_state]
@@ -121,18 +121,18 @@ def handle_users_reply(sender_id, message_text):
 
 
 def send_message(recipient_id, message_text):
-    params = {"access_token": os.environ["FB_PAGE_ACCESS_TOKEN"]}
-    headers = {"Content-Type": "application/json"}
+    params = {'access_token': os.environ['FB_PAGE_ACCESS_TOKEN']}
+    headers = {'Content-Type': 'application/json'}
     request_content = json.dumps({
-        "recipient": {
-            "id": recipient_id
+        'recipient': {
+            'id': recipient_id
         },
-        "message": {
-            "text": message_text
+        'message': {
+            'text': message_text
         }
     })
     response = requests.post(
-        "https://graph.facebook.com/v2.6/me/messages",
+        'https://graph.facebook.com/v2.6/me/messages',
         params=params, headers=headers, data=request_content
     )
     response.raise_for_status()
