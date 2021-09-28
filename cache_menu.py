@@ -13,7 +13,7 @@ def get_categories_id(moltin_token, moltin_secret):
     categories_id = {}
     all_categories = get_all_categories(moltin_token, moltin_secret)
     for category in all_categories['data']:
-        categories_id.update({category['name']:category['id']})
+        categories_id.update({category['name']: category['id']})
     return categories_id
 
 
@@ -53,8 +53,8 @@ def get_products_by_category_with_image(
 
 def main():
     load_dotenv()
-    moltin_token = os.environ["ELASTICPATH_CLIENT_ID"]
-    moltin_secret = os.environ["ELASTICPATH_CLIENT_SECRET"]
+    moltin_token = os.environ['ELASTICPATH_CLIENT_ID']
+    moltin_secret = os.environ['ELASTICPATH_CLIENT_SECRET']
     db = get_database_connection()
 
     categories_id = get_categories_id(moltin_token, moltin_secret)
