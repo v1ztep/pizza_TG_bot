@@ -11,11 +11,6 @@
 * Необходимо зарегистрироваться в [Redislabs](https://redislabs.com/) - забрать 
 адрес базы данных вида `redis-13965.f18.us-east-4-9.wc1.cloud.redislabs.com:16635` 
 и его пароль.
-* Создать бота в Telegram через специального бота:
-[@BotFather](https://telegram.me/BotFather), забрать API ключ и написать 
-созданному боту. В разделе `Payments` создать ключ для оплаты картой.
-* Забрать свой `chat_id` через [@userinfobot](https://telegram.me/userinfobot) - 
-  необходим для получения логов (ошибки будут идти именно этому пользователю).
 * Зарегистрироваться в [API Яндекс-геокодера](https://developer.tech.yandex.ru/),
 и получите `JavaScript API и HTTP Геокодер`.
 * Зарегистрироваться в CMS [Moltin](https://www.elasticpath.com/), забрать 
@@ -26,6 +21,20 @@
 воспользоваться [`address_upload.py`](#Загрузка-адресов)) и `сustomer-address` 
 куда будут внесены успешные заказы (необходимые поля: `name`, `date`, `longitude`, 
 `latitude`, `order`).
+
+###### Для Telegram-бота
+* Создать бота в Telegram через специального бота:
+[@BotFather](https://telegram.me/BotFather), забрать API ключ и написать 
+созданному боту. В разделе `Payments` создать ключ для оплаты картой.
+* Забрать свой `chat_id` через [@userinfobot](https://telegram.me/userinfobot) - 
+  необходим для получения логов (ошибки будут идти именно этому пользователю).
+###### Для Facebook-бота
+* [Создать страницу](https://www.facebook.com/bookmarks/pages?ref_type=logout_gear)
+в Facebook, [создать приложение](https://developers.facebook.com/apps/), 
+сгенерировать маркер доступа (PAGE_ACCESS_TOKEN) >>>
+`https://developers.facebook.com/apps/ID_ВАШЕГО_ПРИЛОЖЕНИЯ/messenger/settings/`, 
+подключить webhook (урл запущенного приложения и свой уникальный токен доступа 
+(FB_APP_VERIFY_TOKEN), подписки на messages\messaging_postbacks)
 
 ### Переменные окружения
 
@@ -39,6 +48,8 @@ ELASTICPATH_CLIENT_ID=ВАШ_API_КЛЮЧ_MOLTIN
 ELASTICPATH_CLIENT_SECRET=ВАШ_API_SECRET_КЛЮЧ_MOLTIN
 YANDEX_GEOCODER_API_KEY=ВАШ_YANDEX_GEOCODER_API_КЛЮЧ
 PAYMENT_TG_TOKEN=ВАШ_PAYMENT_TG_API_КЛЮЧ
+FB_PAGE_ACCESS_TOKEN=ВАШ_PAGE_ACCESS_TOKEN
+FB_APP_VERIFY_TOKEN=ВАШ_FB_APP_VERIFY_TOKEN
 ```
 
 ## Загрузка информации в CMS Moltin/ElasticPath
@@ -99,3 +110,10 @@ pip install -r requirements.txt
 ```
 python tg_bot.py
 ```
+Файл `cache_menu.py` необходимо запускать отдельно для постоянного создания меню
+и его кэширования, для запуска скриптов раз в несколько минут, часов или дней 
+есть специальный инструмент — [cron](https://help.ubuntu.ru/wiki/cron).
+```
+python fb_app.py
+```
+
