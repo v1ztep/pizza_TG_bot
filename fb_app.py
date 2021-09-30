@@ -32,15 +32,15 @@ def webhook():
             for messaging_event in entry['messaging']:
                 if messaging_event.get('message'):
                     sender_id = messaging_event['sender']['id']
-                    handle_users_reply(sender_id, '/start')
+                    users_reply_handler(sender_id, '/start')
                 elif messaging_event.get('postback'):
                     sender_id = messaging_event['sender']['id']
                     postback = messaging_event['postback']
-                    handle_users_reply(sender_id, postback)
+                    users_reply_handler(sender_id, postback)
     return 'ok', 200
 
 
-def handle_start(sender_id, message_text, db):
+def start_handler(sender_id, message_text, db):
     send_menu(sender_id, 'Основные', db)
     return 'HANDLE_MENU'
 
@@ -100,10 +100,10 @@ def cart_handler(sender_id, message_text, db):
         return 'HANDLE_CART'
 
 
-def handle_users_reply(sender_id, message_text):
+def users_reply_handler(sender_id, message_text):
     db = get_database_connection()
     states_functions = {
-        'START': handle_start,
+        'START': start_handler,
         'HANDLE_MENU': menu_handler,
         'HANDLE_CART': cart_handler
     }
