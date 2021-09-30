@@ -110,7 +110,10 @@ pip install -r requirements.txt
 ```
 python tg_bot.py
 ```
+Файл `cache_menu.py` необходимо запускать отдельно для постоянного создания меню
+и его кэширования, для запуска скриптов раз в несколько минут, часов или дней 
+есть специальный инструмент — [cron](https://help.ubuntu.ru/wiki/cron).
 ```
-python cache_menu.py
 python fb_app.py
 ```
+
