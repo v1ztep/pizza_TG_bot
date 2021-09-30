@@ -19,7 +19,7 @@ app = Flask(__name__)
 def verify():
     if request.args.get('hub.mode') == 'subscribe' and request.args.get('hub.challenge'):
         if not request.args.get('hub.verify_token') == os.environ['FB_APP_VERIFY_TOKEN']:
-            return 'Verification token mismatch', 403
+            return 'Verification token mismatch', 200
         return request.args['hub.challenge'], 200
 
     return 'Hello world', 200
