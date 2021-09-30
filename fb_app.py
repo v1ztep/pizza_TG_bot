@@ -11,7 +11,6 @@ from facebook_contents import send_menu
 from moltin import add_product_to_cart
 from moltin import remove_item_in_cart
 
-load_dotenv()
 app = Flask(__name__)
 
 
@@ -139,4 +138,5 @@ def send_message(recipient_id, message_text):
 
 
 if __name__ == '__main__':
+    load_dotenv()
     app.run(debug=True)
